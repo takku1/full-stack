@@ -1,0 +1,4 @@
+interface:
+  display_name: "Full Stack"
+  short_description: "Turn scoped intent into connected software designs"
+  default_prompt: "Use $full-stack to elaborate this request into a scoped, researched design with explicit ownership, interaction contracts, and implementation order."

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "E01",
+    "name": "Native desktop from mock UI",
+    "prompt": "Design the next apps-bar increment for a custom Rust OS. The visual HTML has a hardcoded application list and running booleans. Deliver launch of an already registered application and honest running feedback. Existing documented owners include shell surface, compositor/input, admitted application identity, and supervision, but their APIs have not yet been inspected. Preserve those owners. No application installation, previews, badges, drag-and-drop, or Linux assumption. Produce a bounded design and identify what must be inspected before implementation.",
+    "fixtures": []
+  },
+  {
+    "id": "E02",
+    "name": "Booking cancellation with existing authority",
+    "prompt": "Use full-stack to design only roadmap B-17 from the supplied context. Keep the current stack and produce a concise implementation handoff. Research only if a decision cannot be resolved from the supplied contracts. Do not implement code.",
+    "fixtures": ["fixtures/booking-context.md"]
+  },
+  {
+    "id": "E03",
+    "name": "Nonvisual Rust import pipeline",
+    "prompt": "Plan a Rust command-line importer that reads an explicitly selected local CSV file and writes validated records into an existing storage adapter. It must report rejected rows without silently dropping them and exit nonzero on fatal input failure. No UI, remote service, scheduler, or database replacement. The adapter's batch atomicity is undocumented. Identify required semantics and an investigation before choosing retry or partial-success behavior.",
+    "fixtures": []
+  },
+  {
+    "id": "E04",
+    "name": "Unavailable dependency evidence",
+    "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+    "fixtures": []
+  },
+  {
+    "id": "E05",
+    "name": "Conflicting state authorities",
+    "prompt": "Review this design before planning work: the shell stores the authoritative focused window ID; the input router independently changes the authoritative focused window ID after pointer clicks; the compositor uses its own cached ID for keyboard routing. All three broadcast unordered focus events. We need deterministic keyboard delivery and a recoverable shell restart. Propose responsibility and interaction changes without assuming every logical owner needs a process.",
+    "fixtures": []
+  },
+  {
+    "id": "E06",
+    "name": "Routine change should stay small",
+    "prompt": "Change the documented button label from Save to Save changes. No behavior or interface changes are needed. Explain the scope of the edit; do not create an architecture tree or perform research.",
+    "fixtures": []
+  },
+  {
+    "id": "E07",
+    "name": "Shared provider and different dependency graphs",
+    "prompt": "Design a launcher and a file open-with picker that both consume an existing application registry. Registry change notifications are lossy; snapshots are available. The registry accepts subscription callbacks during startup and consumers call it during their own initialization. Define shared ownership, stale-view recovery, and an implementable work order. Do not duplicate the registry, assume lossless ordering, or treat a runtime interaction cycle as automatically invalid.",
+    "fixtures": []
+  }
+]
