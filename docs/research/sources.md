@@ -1,5 +1,7 @@
 # Sources
 
+Sources for the 0.2.0 wording and implementation extension are recorded separately in the [proposal review](improvement-review.md), including exact sections and applicability limits.
+
 Register for the [research report](foundations.md). Access checked on 2026-09-09. Dates below are publication/revision dates, not search-engine crawl dates. University mirrors contain original works, not university endorsements. Full text was accessible unless stated otherwise. No papers are redistributed here.
 
 1. **Pamela Zave and Michael Jackson (1997).** [Four Dark Corners of Requirements Engineering](https://cse.msu.edu/~chengb/RE-491/Papers/dark-corners-re-zave-jackson.pdf). *ACM TOSEM* 6(1), 1–30. DOI: 10.1145/237432.237434. Conceptual/formal analysis; sections 2–5 support grounded terminology and requirements/specification/domain distinctions. Not an LLM evaluation.

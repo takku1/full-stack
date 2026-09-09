@@ -1,0 +1,15 @@
+# Executed outcome
+
+Initial implementation: `python evals/trials/cli/test_cli.py initial` exited 0 after the two failed attempts described in FAILURES.md. Initial source is retained under initial-source/. The successful initial-execution.json contains 26 real CLI subprocess calls with argv, stdout, stderr and exit status. Each list invocation launches a fresh process, demonstrating persistence between invocations.
+
+Follow-up: `python evals/trials/cli/test_cli.py followup` exited 0 with 30 CLI subprocess calls, recorded in followup-execution.json. The checks cover valid import, missing file, multiple row errors, duplicate rejection, bad headers and row shapes, integer overflow, invalid UTF-8, malformed CSV, real SQLite-trigger-induced rollback after an earlier update, existing-item update, header-only import, trimmed update/new insertion, normalized duplicate rejection and whitespace-only name rejection. Prior listed state is asserted after each rejected import. This verifies listed contents, not byte-identical database files or crash/power-loss durability. No concurrency, memory benchmarks or fuzzing were run.
+
+Trivial edit: README.md command label changed from 'List inventory' to 'Show inventory'; no application changes for that step. A local Select-String inspection is retained in documentation-check.txt. The executable command remains `list`. No full regression rerun was needed for this label-only edit.
+
+Requirements/design self-review: input policy, SQLite state ownership, CLI presentation, atomicity and error flow are recorded in DESIGN.md. This is the implementing agent's self-review; no independent evaluator or academic validation is claimed. All requested implementation work is complete; no unfinished-work registry was needed. No deployment/publication or third-party installation performed.
+
+Guidance provenance: instructions/ snapshots and skill-hashes.json cover exactly the three skill files read: SKILL.md, references/implementation.md and references/artifacts.md. Snapshots/hashes were captured after initial checks; reads occurred before implementation. No reference was reread to change the initial approach. The parent notified this agent that design-method.md changed during the trial; that file was never read. Exact original-read timestamps and pre-read hashes were not captured, so the hashes attest snapshot contents rather than proving original-read byte identity.
+
+To rerun current behavior, use `python test_cli.py followup` from this directory. The initial mode describes the preserved initial-source behavior and is not intended to pass against the revised normalization policy. Successful runs remove their temporary fixtures. The parent later removed the two inaccessible failed-run scratch directories with approved escalation; failure records remain.
+
+Packaging note: retained instruction snapshots now use `.md.txt` filenames so their original relative links are preserved as raw evidence, not interpreted as a second runnable skill. Contents and captured source hashes are unchanged.

@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E04",
+    "name":  "Unavailable dependency evidence",
+    "prompt":  "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library\u0027s supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+    "fixtures":  [
+
+                 ]
+}

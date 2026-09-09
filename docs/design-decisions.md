@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions define version 0.1.0. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design and the 0.2.0 extension in D-011/D-012. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 
@@ -60,7 +60,19 @@ Academic depth is appropriate to this initial assignment. It is not a mandatory 
 
 Structural validation establishes packaging properties. A self-reviewed worked example checks consistency but does not establish effectiveness. Behavioral evaluation must exercise scope retention, ownership, missing prerequisites, unsupported claims, and handoff usability on realistic tasks. Comparative trials remain tracked in the roadmap.
 
-## Inspected predecessor baseline
+## D-011: Continue into implementation when requested
+
+Version 0.2.0 preserves D-001's standalone design default and adds a conditional [implementation reference](../skills/full-stack/references/implementation.md). A build request activates it using the same requirements, contracts, and work registry. It requires completion evidence for the selected outcome, not merely a first working slice. Existing subject-project execution rules retain authority.
+
+A separate companion skill would add discovery and handoff cost without a distinct runtime or execution mechanism. A mandatory build mode would violate design-only requests. The conditional reference is the smallest extension supporting both intents; the host still supplies editing, execution, and runtime capabilities.
+
+## D-012: Compress repetition, preserve decision criteria
+
+Keep scope, authority, evidence limits, readiness, and mode selection in the entrypoint. Load detailed terminology, decomposition, artifact patterns, research, integration, and implementation only when needed. Retain distinctions that change a decision; remove duplicated explanation rather than replace precise terms with shorthand. Count entrypoint and selected-reference costs separately so moving text cannot masquerade as total savings.
+
+The [proposal review](research/improvement-review.md) records accepted, modified, and rejected suggestions with sources. Compression is an instruction-cost measurement; behavior needs separate evaluation. Neither reduced tokens nor passing samples establishes superiority.
+
+## Inspected predecessor baseline (0.1.0)
 
 Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its repository had no resolvable HEAD during inspection. These identify inspected baselines, not a claim that either working tree was clean.
 

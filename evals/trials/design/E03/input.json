@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E03",
+    "name":  "Nonvisual Rust import pipeline",
+    "prompt":  "Plan a Rust command-line importer that reads an explicitly selected local CSV file and writes validated records into an existing storage adapter. It must report rejected rows without silently dropping them and exit nonzero on fatal input failure. No UI, remote service, scheduler, or database replacement. The adapter\u0027s batch atomicity is undocumented. Identify required semantics and an investigation before choosing retry or partial-success behavior.",
+    "fixtures":  [
+
+                 ]
+}

@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E01",
+    "name":  "Native desktop from mock UI",
+    "prompt":  "Design the next apps-bar increment for a custom Rust OS. The visual HTML has a hardcoded application list and running booleans. Deliver launch of an already registered application and honest running feedback. Existing documented owners include shell surface, compositor/input, admitted application identity, and supervision, but their APIs have not yet been inspected. Preserve those owners. No application installation, previews, badges, drag-and-drop, or Linux assumption. Produce a bounded design and identify what must be inspected before implementation.",
+    "fixtures":  [
+
+                 ]
+}

@@ -1,0 +1,1 @@
+Changed the local documentation fixture from `Button label: Save` to `Button label: Save changes`. Only the label changed; no behavior or interface edits were made. Checked the final file contents. No architecture work or research was needed.

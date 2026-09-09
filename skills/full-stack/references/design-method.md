@@ -1,68 +1,43 @@
 # Design method
 
-Use for substantial prompt elaboration, a roadmap slice, or a change crossing meaningful boundaries. Scale artifact depth to uncertainty and risk. This is a reasoning method, not a mandatory sequence of approval gates.
+Use for substantial decomposition. The entrypoint owns scope, authorization, evidence, and readiness rules; this reference adds boundary analysis. Scale depth to uncertainty and risk.
 
-## Frame and ground
+## Ground representative tasks
 
-Write the requested outcome and exclusions before expanding the design. Identify the actual subject system and context: actors, external systems, platform, budget constraints, compatibility, and available evidence. If the roadmap has several unrelated outcomes, identify the selected ones rather than treating the file as authorization to implement everything.
+Trace consequential terms to the request and inspected artifacts. Define identity, lifetime, transitions, cardinality, authority, and observable completion where ambiguity changes behavior. Map aliases without merging distinct entities: a process, application instance, and window can have different lifetimes.
 
-Inspect enough repository reality to locate relevant owners and execution paths. Record conflicting current/target claims and investigate those that could change the next increment. Existing architecture is a constraint and source of evidence, not proof that every described feature works.
+For each selected task, identify the actor, needed information, authorized mutations, and observer of completion. Explore relevant absent/stale data, duplicates, cancellation, partial success, crash, and restart. Resolve conflicting current/target claims that affect the next increment.
 
-Extract terms from the request and actual artifacts. Define only ambiguities that affect behavior: identity, lifetime, state transitions, cardinality, authority, or observable completion. Map aliases; do not silently merge distinct entities. A process, application instance, and window may have different lifetimes.
-
-## Elaborate representative tasks
-
-Trace a requested task from its trigger to its observable result. Identify who acts, what information is needed, what state changes, who may authorize the change, and who observes completion. Add failure and alternate paths according to their relevance: absent data, stale state, duplicate action, cancellation, partial success, crash, or restart.
-
-For a visual prototype, identify layout/appearance, demonstrated interactions, and mock behavior separately. Preserve salient visual requirements by linking the reference. Include accessibility and keyboard behavior needed for the selected task. A mock array is not evidence of a registry, persistence layer, or lifecycle service.
-
-For a nonvisual task, use equivalent observable outputs: returned values, stored records, emitted events, device actions, or operational signals. Do not introduce a UI merely because the skill is called full-stack.
+For prototypes, distinguish appearance, demonstrated interactions, and simulated behavior; link salient visual requirements and include relevant accessibility/keyboard behavior. For nonvisual tasks, use returned values, records, events, device actions, or operational signals. A mock array establishes neither persistence nor a lifecycle service.
 
 ## Allocate and challenge boundaries
 
 For each candidate responsibility ask:
 
-1. What requirement or necessary dependency justifies it?
-2. What state, policy, resource, or private design choice does it own?
-3. What do consumers need, and what should remain private?
-4. Does its lifetime, authority, change pressure, or failure behavior justify a separate boundary?
-5. What cost does the split introduce, and could the responsibility remain cohesive inside an existing component?
+1. Which requirement or necessary dependency justifies it?
+2. Which state, policy, resource, or private decision does it own?
+3. What must consumers know, and what stays private?
+4. Does lifetime, authority, change pressure, or failure behavior justify separation?
+5. What does the split cost, and can an existing component remain cohesive?
 
-Choose a primary reason for a consequential boundary and a meaningful challenge. For example, information hiding may favor separation while latency or coordinated transaction semantics favor colocation. Record the tradeoff only if it affects the recommendation.
-
-Identify source/build, runtime, protection, and deployment mappings independently. A new source module need not become a process. Fault containment only exists when the actual isolation and recovery design supports it. Resource lifetime and Rust borrowing constraints belong in the implementation mapping without replacing architectural authority.
+Challenge consequential boundaries with a competing quality: information hiding may favor separation while latency or transaction semantics favor colocation. Record tradeoffs that affect the choice. Map source/build, runtime, protection, and deployment independently. A source module does not supply fault containment; actual isolation and recovery must support it. Rust borrowing and resource lifetime constrain implementation without replacing architectural authority.
 
 ## Resolve and revise
 
-Investigate choices that could invalidate a boundary or large amount of custom work. Compare feasible reuse/adaptation/build approaches under actual constraints. A selected provider bounds the custom design at its interface; remaining fit gaps become owned work only when required.
+Investigate choices that could invalidate boundaries or substantial custom work. Compare feasible reuse/adaptation/build under actual constraints. Keep adopted providers opaque beyond their contracts; assign required fit gaps to owned work.
 
-Revisit both requirement interpretation and architecture when new evidence matters. Do not weaken an explicit requirement merely because a candidate dependency lacks a feature. Present the incompatibility and alternatives. Conversely, do not preserve an invented subcomponent after research shows that an existing owner already provides the needed behavior.
+Revisit requirement interpretation and architecture when evidence changes. Preserve explicit requirements when a dependency lacks a feature: expose the incompatibility and alternatives. Remove invented subcomponents when an existing owner supplies the behavior. Recheck generated concepts against original evidence before deriving further artifacts.
 
-## Compose the design
+## Compose contracts
 
-Match each consumer assumption to a provider guarantee or an explicit unresolved condition. Check identity, schema, versioning, error outcomes, ordering, delivery, authorization, cancellation, backpressure, and recovery where relevant. Avoid promising exactly-once effects or lossless streams without a mechanism that supports them.
+Match consumer assumptions to provider guarantees or unresolved conditions. Where relevant, check identity, schema/versioning, errors, ordering/delivery, authorization, cancellation, backpressure, and recovery. Exactly-once effects and lossless streams require supporting mechanisms.
 
-Trace each selected task across the resulting contracts. Confirm both semantic completion and user/actor feedback. A successful transport acknowledgment may not mean that a launch, save, payment, or device operation completed.
+Trace the complete task and actor feedback. A transport acknowledgment need not mean a launch, save, payment, or device action completed. Inspect bootstrap, shutdown, reconnection, and stale derived state: consumers must resume, resynchronize, or report an unknown view. Choose polling or subscriptions from requirements and provider behavior.
 
-Inspect lifecycle transitions, especially bootstrap, shutdown, reconnection, and stale derived state. A consumer that disconnects must know how to resume, resynchronize, or report that its view is unknown. Polling or event subscriptions can each be valid; choose based on the requirements and provider behavior.
+## Sequence delivery
 
-## Sequence the next increment
+Use [work packages](artifacts.md#work-package) to connect design to execution. Mark proposed paths and unavailable prerequisites. Order interface agreements before dependent integration; different files do not establish independence.
 
-Derive implementation work from the design rather than using implementation tasks as the architecture. Each package needs an outcome, affected code/contract locations, prerequisites, checks, and unresolved blockers. Mark proposed code paths explicitly.
+Runtime graphs can contain cycles. Delivery still needs a workable order: resolve cycles through a stable interface, coordinated increment, or investigation. Prefer a real vertical slice with an explicit retirement path for temporary adapters.
 
-Order required interface agreements and prerequisites before dependent integration. Runtime graphs may contain cycles; the implementation dependency graph needs a workable order. Resolve delivery cycles through a stable interface, coordinated increment, or explicit investigation. Do not declare parallel independence merely because file paths differ.
-
-Prefer a small vertical slice that exercises real boundaries. An early test double can establish a contract but must not be reported as a working platform facility. Preserve a path to real integration and retirement of temporary adapters.
-
-## Readiness review
-
-For the next increment, establish:
-
-- Selected requirements have origins, owners, and observable acceptance conditions.
-- Necessary dependencies are verified available, scheduled, or explicitly blocking.
-- Shared state authority and interface assumptions do not contradict each other.
-- Important task and failure paths reach an observable outcome.
-- Material product/architecture decisions are resolved; private implementation choices may remain.
-- New work is linked from the existing registry and scope exclusions remain intact.
-
-If this is not satisfied, deliver the supported design and identify exactly what remains conditional. Do not label the whole system complete based on sampled scenarios or documentation structure.
+Apply the entrypoint's readiness review across responsibilities, interactions, and the selected outcome. Confirm origins/owners/checks, dependency availability, compatible authority and contracts, observable failure paths, resolved consequential decisions, and links to the existing registry. Deliver conditional work as conditional; sampled scenarios do not establish whole-system completeness.

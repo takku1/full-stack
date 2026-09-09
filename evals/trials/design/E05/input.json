@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E05",
+    "name":  "Conflicting state authorities",
+    "prompt":  "Review this design before planning work: the shell stores the authoritative focused window ID; the input router independently changes the authoritative focused window ID after pointer clicks; the compositor uses its own cached ID for keyboard routing. All three broadcast unordered focus events. We need deterministic keyboard delivery and a recoverable shell restart. Propose responsibility and interaction changes without assuming every logical owner needs a process.",
+    "fixtures":  [
+
+                 ]
+}

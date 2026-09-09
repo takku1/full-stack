@@ -1,0 +1,47 @@
+﻿{
+  "baseline_commit": "19ddd35a7b2c3022f8b17b563b0b14d385089693",
+  "tokenizer": "o200k_base",
+  "tiktoken_version": "0.14.0",
+  "normalization": "UTF-8 without BOM; LF newlines; full Markdown including frontmatter",
+  "files": {
+    "skills/full-stack/NOTICE.md": {
+      "before": 377,
+      "after": 377
+    },
+    "skills/full-stack/SKILL.md": {
+      "before": 1130,
+      "after": 998
+    },
+    "skills/full-stack/references/artifacts.md": {
+      "before": 656,
+      "after": 717
+    },
+    "skills/full-stack/references/design-method.md": {
+      "before": 1096,
+      "after": 706
+    },
+    "skills/full-stack/references/existing-projects.md": {
+      "before": 541,
+      "after": 541
+    },
+    "skills/full-stack/references/implementation.md": {
+      "before": 0,
+      "after": 464
+    },
+    "skills/full-stack/references/research.md": {
+      "before": 548,
+      "after": 548
+    },
+    "skills/full-stack/references/terminology.md": {
+      "before": 1621,
+      "after": 1621
+    }
+  },
+  "entrypoint_reduction_percent": 11.68,
+  "all_markdown": {
+    "before": 5969,
+    "after": 5972
+  },
+  "implementation_route_after": 1462,
+  "limits": "Counts omit host wrappers, tools, task artifacts, rereads, and reasoning. Reference loading varies by task. No equivalent 0.1 implementation route exists."
+}

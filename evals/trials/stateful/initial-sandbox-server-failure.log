@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "Z:\full-stack\evals\trials\stateful\app.py", line 82, in <module>
+    server = HTTPServer(('127.0.0.1', args.port), handler_for(Notes(args.db)))
+                                                              ^^^^^^^^^^^^^^
+  File "Z:\full-stack\evals\trials\stateful\notes.py", line 15, in __init__
+    self._execute('CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, body TEXT NOT NULL)')
+  File "Z:\full-stack\evals\trials\stateful\notes.py", line 18, in _execute
+    connection = sqlite3.connect(self.path)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file

@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E02",
+    "name":  "Booking cancellation with existing authority",
+    "prompt":  "Use full-stack to design only roadmap B-17 from the supplied context. Keep the current stack and produce a concise implementation handoff. Research only if a decision cannot be resolved from the supplied contracts. Do not implement code.",
+    "fixtures":  [
+                     "fixtures/booking-context.md"
+                 ]
+}

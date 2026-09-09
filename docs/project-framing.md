@@ -18,7 +18,7 @@ Inputs may include a new-product prompt, an explicitly selected roadmap outcome,
 
 Research follows the decisions that could change the design. Broad literature exploration belongs to an explicit research assignment, such as this project's initial foundations. Ordinary invocation should not reproduce the entire research program.
 
-Planning is the default deliverable. Product code, dependency installation, deployment, publication, team assignment, and tool installation require authorization from the task context. This does not impose a separate approval ceremony on ordinary design decisions or document creation already requested.
+Planning is the default deliverable. A request to build or implement activates the conditional [implementation workflow](../skills/full-stack/references/implementation.md) within the selected scope; already authorized work needs no repeated approval. Dependency/tool installation, deployment, publication, and delegation follow applicable task and host permissions. The skill supplies instructions; the host supplies repository access, execution tools, and runtime capabilities.
 
 ## Output contract
 
@@ -42,6 +42,8 @@ Scope disposition, evidence status, and delivery status are separate fields. A f
 Completeness is relative to the selected outcomes, explicit constraints, considered scenarios, and known environment. It is not an assurance that every possible feature or failure has been discovered.
 
 The design is ready for the next implementation increment when its required behavior has an owner, its critical interactions have defined outcomes, prerequisites are available or explicitly scheduled, and no unresolved decision would force the implementer to choose a different product or architecture. Remaining private implementation choices are expected.
+
+For an implementation request, readiness starts delivery. Completion requires the selected acceptance criteria to be exercised through real integration, with remaining requirements or unavailable checks recorded honestly. A first increment, a successful build, and a mock-backed demonstration do not establish milestone completion.
 
 ## Initial non-goals
 

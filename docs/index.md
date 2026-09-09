@@ -13,3 +13,5 @@ Read in this order:
 9. [Evaluation protocol](../evals/README.md): how to assess whether those instructions help.
 
 The skill references hold the canonical operational method and templates. These documents link to them rather than maintaining competing versions.
+
+For the 0.2.0 revision, see the [proposal/source review](research/improvement-review.md), conditional [implementation workflow](../skills/full-stack/references/implementation.md), and [validation evidence](../evals/results/revision-review.md).

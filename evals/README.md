@@ -17,3 +17,15 @@ For comparisons, use equivalent inputs and budgets for the baseline, each predec
 Run `python evals/check_artifacts.py` from the project root. This checks local Markdown links, JSON fixtures, required skill files, portable-reference containment, and unresolved scaffold markers. It does not assess architectural semantics.
 
 The skill-creator `quick_validate.py` can additionally check the skill's frontmatter. Record the installed validator version/path and outcome when used. A successful structural check is not a successful behavioral experiment.
+
+## Implementation trials
+
+For implementation evaluation, supply explicit acceptance criteria, an isolated writable project, and a real runtime. Retain initial source for existing-project cases. Exercise a nonvisual tool, an existing feature, and a user-facing application with durable state; check restart in a new process where required. Use real integrations and distinguish HTTP-level checks from browser interaction.
+
+After the initial implementation, request a bounded policy change or adapter replacement. Preserve before/after artifacts and inspect ownership and regressions. Keep this follow-up hidden until the first result when testing unanticipated change; disclose when it was supplied up front. Finish with a trivial documentation edit to check proportional effort.
+
+The [0.2.0 revision record](results/revision-review.md) links exact trial inputs, generated artifacts, checks, and limits. Trial directories are retained experimental artifacts, not new product features or competing project roadmaps. Their local roadmaps describe only their synthetic subject projects.
+
+## Context cost
+
+`python evals/measure_context.py --baseline <commit>` compares the entrypoint and portable Markdown using `o200k_base` (optional development dependency: `tiktoken`). It may download tokenizer data into the ignored `.tokenizer-cache/`; this is not a portable-skill runtime dependency. Record the resolved commit and tokenizer version. Compare equivalent routes and report conditional-reference cost separately. Shorter instructions alone do not establish better token value; judge retained behavior and omissions as well.

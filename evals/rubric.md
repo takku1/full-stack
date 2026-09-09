@@ -21,3 +21,9 @@ High-impact misses include authorizing work outside the request, inventing an ex
 | E07 | One registry description; explicit snapshot/notification reconciliation; distinguish runtime and work graphs | Duplicated registries; notification loss ignored; unworkable bootstrap order |
 
 Do not require automatic polling, subscriptions, one process, several processes, or a particular dependency. Judge the proposed semantics against the constraints and evidence.
+
+## Implementation assessment
+
+Assess these dimensions separately: preservation of design-only/build intent; coverage of selected acceptance criteria; real integration and relevant failures/lifecycle; state ownership and information hiding; source/handoff traceability; honest execution evidence; bounded changes and continuation status. A build or isolated test cannot substitute for the required user/system flow.
+
+For later changes, cite the decision that moved and its affected responsibility, plus preserved behavior. File count is descriptive only. If the change was revealed before initial design, report the weaker diagnostic. Distinguish independent generation, author scoring, runtime checks, and outside evaluation rather than labeling all of them independent validation.

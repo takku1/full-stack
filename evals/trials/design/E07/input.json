@@ -1,0 +1,8 @@
+﻿{
+    "id":  "E07",
+    "name":  "Shared provider and different dependency graphs",
+    "prompt":  "Design a launcher and a file open-with picker that both consume an existing application registry. Registry change notifications are lossy; snapshots are available. The registry accepts subscription callbacks during startup and consumers call it during their own initialization. Define shared ownership, stale-view recovery, and an implementable work order. Do not duplicate the registry, assume lossless ordering, or treat a runtime interaction cycle as automatically invalid.",
+    "fixtures":  [
+
+                 ]
+}

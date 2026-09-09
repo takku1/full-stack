@@ -1,0 +1,335 @@
+[
+  {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "phase": "initial"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\valid.csv"
+    ],
+    "exit": 0,
+    "stdout": "Imported 2 rows\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\missing.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "[Errno 2] No such file or directory: 'Z:\\\\full-stack\\\\evals\\\\trials\\\\cli\\\\tmp5bpncbb7\\\\missing.csv'\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\invalid.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 3: name must be nonempty, without surrounding whitespace or controls\nrow 4: quantity must be a nonnegative integer\nrow 5: quantity must be a nonnegative integer\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\duplicate.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 3: duplicate name 'apple'\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\wrong_header.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 1: expected header name,quantity\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\shape.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 3: expected two fields\nrow 4: expected two fields\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\overflow.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 2: quantity exceeds SQLite integer range\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\encoding.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "'utf-8' codec can't decode byte 0xff in position 14: invalid start byte\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\broken.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "unexpected end of data\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\rollback.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "blocked by test trigger\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,2\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\update.csv"
+    ],
+    "exit": 0,
+    "stdout": "Imported 2 rows\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,7\nmelon,4\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\empty.csv"
+    ],
+    "exit": 0,
+    "stdout": "Imported 0 rows\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,7\nmelon,4\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "import",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\spaces.csv"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "row 2: name must be nonempty, without surrounding whitespace or controls\n"
+  },
+  {
+    "argv": [
+      "C:\\Users\\dcarn\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+      "Z:\\full-stack\\evals\\trials\\cli\\inventory.py",
+      "--db",
+      "Z:\\full-stack\\evals\\trials\\cli\\tmp5bpncbb7\\inventory.sqlite3",
+      "list"
+    ],
+    "exit": 0,
+    "stdout": "name,quantity\napple,7\nmelon,4\npear,0\n",
+    "stderr": ""
+  },
+  {
+    "outcome": "all assertions passed",
+    "cli_calls": 26
+  }
+]
