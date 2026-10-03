@@ -35,7 +35,7 @@ budget: { header: 400, body: 2500 }
 
 # Full Stack
 
-Logic-first entrypoint: control is formal; method meaning lives in this
+Logic-first entrypoint: control is structured; method meaning lives in this
 package's references. Conversion evidence and cost accounting are recorded
 in the project's logic-conversion pilot report.
 
@@ -48,7 +48,7 @@ resources:
     path: design documents
     access: create
   registry:
-    path: work registry
+    path: subject work tracker nearest the changed component, if any
     access: read+create
   references:
     path: references/*.md
@@ -60,6 +60,7 @@ always:
   keep current state, target state, and migration distinct
   link requirements, decisions, realization, and checks
   mark unexecuted checks as unexecuted
+  confirm target files have no concurrent uncommitted edits
 never:
   expand scope without authorization
   invent existing interfaces or source paths
@@ -67,6 +68,7 @@ never:
   implement without a build request
   deploy, publish, or install tools beyond task authorization
   mark unexecuted checks as passed
+  create a new registry file without authorization
 ```
 
 ```logic
@@ -77,6 +79,9 @@ design:
 
   if request is an isolated routine edit:
     generate minimal edit note from request as design
+    if subject has a work tracker:
+      apply registry update with design as entry
+      write entry with registry
     return design as design
 
   if request is ambiguous on outcome or authority:
@@ -87,9 +92,10 @@ design:
 
   if subject is known:
     read instructions from subject as context
-    read existing entries from registry as entries
     apply grounding with context as scope
-    apply registry entries with entries as scope
+    if subject has a work tracker:
+      read existing entries from registry as entries
+      apply registry entries with entries as scope
 
   when terms are ambiguous:
     read terminology from references/terminology.md as terms
@@ -135,8 +141,9 @@ design:
   label finish design:
 
   write design with design_docs
-  apply registry update with design as entry
-  write entry with registry
+  if subject has a work tracker:
+    apply registry update with design as entry
+    write entry with registry
 
   return design as design
 ```
@@ -148,7 +155,9 @@ implement:
       abort with "A request is required."
 
   unless criteria are known:
-    ask user to state the acceptance criteria as criteria
+    generate criteria from request and prior conversation as criteria
+    if criteria cannot be derived:
+      ask user to state the acceptance criteria as criteria
 
   if request is ambiguous on outcome or authority:
     ask user to clarify the outcome or authority as clarification
@@ -172,8 +181,9 @@ implement:
       retry
 
   write implementation with subject
-  apply registry update with implementation as entry
-  write entry with registry
+  if subject has a work tracker:
+    apply registry update with implementation as entry
+    write entry with registry
   generate completion report from implementation as completion
 
   return:
@@ -256,5 +266,7 @@ then finish all selected transitions, failures, and lifecycle
 obligations. Reuse existing facilities. Test doubles may exercise a
 contract early but never substitute for required behavior. Run the
 project's checks, exercise the real user or system path, and report
-implemented behavior with actual evidence and limits. Record unfinished
+implemented behavior with actual evidence and limits. State the
+acceptance criteria used, flagging any derived rather than user-stated,
+so the user can correct them after the fact. Record unfinished
 required work, blockers, and the next resumption step in the registry.

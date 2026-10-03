@@ -78,6 +78,12 @@ The prose entrypoint becomes a SkillWren contract-header plus logic-body file. R
 
 Alternative: keep the prose entrypoint and the logic draft side by side. Rejected because two competing entrypoints split maintenance and router behavior; the [pilot report](../evals/trials/logic-conversion/pilot-report.md) records the conversion evidence and dogfood findings. Behavior still needs independent evaluation under FS-001; validator-clean is structure, not proof of effect.
 
+## D-014: Live-fire flow refinements
+
+First live use of the logic entrypoint (MochiOS performance fix, [field report](research/field-report-2026-10-03-mochios.md)) produced five refinements, all validator-clean with no header change. Derive acceptance criteria from the request and prior conversation before asking, and state derived criteria in the completion report for after-the-fact correction. Resolve the work registry to the subject's existing tracker nearest the changed component, skip registry steps when none exists, and never create a registry file without authorization. Routine edits record a registry entry in both flows when a tracker exists, keeping `design` and `implement` consistent. Confirm target files have no concurrent uncommitted edits, for repos with several agents active. Reword the entrypoint claim from "control is formal" to "control is structured": `apply` steps carry description, not checked effects.
+
+Alternative: leave the flows as piloted and carry the friction as runner judgment. Rejected because each point forced a mid-run decision the skill should have made; the fixes are branch conditions and invariants, not new features. One observation (the `apply` verb carrying description rather than control) belongs to SkillWren rather than this skill and is recorded as a format-level finding, not applied here.
+
 ## Inspected predecessor baseline (0.1.0)
 
 Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its repository had no resolvable HEAD during inspection. These identify inspected baselines, not a claim that either working tree was clean.

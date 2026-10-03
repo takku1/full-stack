@@ -152,3 +152,11 @@ SkillWren text is copied into the draft; only the format is
 followed. Full-stack prose remains the behavior authority; upstream
 MIT notices are retained in
 [NOTICE.md](../../../skill/full-stack/NOTICE.md).
+
+## Promotion
+
+2026-10-03: the draft was promoted to [skill/full-stack/SKILL.md](../../../skill/full-stack/SKILL.md) as skill id `full-stack`, version 0.4.1, with reference paths localized to the package. The draft file is retained as the trial artifact; this report remains the conversion evidence.
+
+## Live-fire fixes
+
+First live run (MochiOS performance fix) is recorded in the [field report](../../../docs/research/field-report-2026-10-03-mochios.md). Its five findings were applied to the live entrypoint only, not back-ported to the draft above: derive-then-ask for acceptance criteria, registry resolution with a no-new-registry rule, consistent routine-edit registry behavior across flows, a concurrent-edit check in `always`, and "control is structured" replacing "control is formal". The draft stays frozen as the validated trial artifact.
