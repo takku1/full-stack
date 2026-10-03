@@ -1,6 +1,6 @@
 ---
-skill: full-stack-logic
-name: full-stack-logic
+skill: full-stack
+name: full-stack
 description: Turn a software request into a scoped design with ownership, contracts, and ordered work; implement when asked.
 version: 0.4.1
 purpose: Turn a software request into a scoped design with ownership, contracts, and ordered work; implement when asked.
@@ -33,9 +33,11 @@ cost: expensive
 budget: { header: 400, body: 2500 }
 ---
 
-# Full Stack Logic
+# Full Stack
 
-Pilot conversion of the prose [full-stack skill](../../../skill/full-stack/SKILL.md) to the SkillWren logic-first format. Meaning follows the prose original; control is formal. Evidence lives in [pilot-report.md](pilot-report.md).
+Logic-first entrypoint: control is formal; method meaning lives in this
+package's references. Conversion evidence and cost accounting are recorded
+in the project's logic-conversion pilot report.
 
 ```contract
 resources:
@@ -49,7 +51,7 @@ resources:
     path: work registry
     access: read+create
   references:
-    path: ../../skill/full-stack/references/*.md
+    path: references/*.md
     access: read
     immutable: true
 always:
@@ -90,11 +92,11 @@ design:
     apply registry entries with entries as scope
 
   when terms are ambiguous:
-    read terminology from ../../skill/full-stack/references/terminology.md as terms
+    read terminology from references/terminology.md as terms
     apply term fixes with terms as scope
 
   when decomposition is substantial:
-    read design method from ../../skill/full-stack/references/design-method.md as method
+    read design method from references/design-method.md as method
     apply boundary method with method as scope
 
   when a reversible ordinary choice applies:
@@ -103,15 +105,15 @@ design:
   generate design from scope as design
 
   if reuse choices could change the design:
-    read research guide from ../../skill/full-stack/references/research.md as guide
+    read research guide from references/research.md as guide
     generate resolution options from guide as options
     apply choice with options as design
 
-  read artifact patterns from ../../skill/full-stack/references/artifacts.md as patterns
+  read artifact patterns from references/artifacts.md as patterns
   apply shape with patterns as design
 
   if subject has existing contracts, providers, or registries:
-    read integration guide from ../../skill/full-stack/references/existing-projects.md as integration
+    read integration guide from references/existing-projects.md as integration
     apply delta with integration as design
 
   if scope splits suggest a smaller increment:
@@ -155,7 +157,7 @@ implement:
   run design with:
     request = request
 
-  read implementation guide from ../../skill/full-stack/references/implementation.md as guide
+  read implementation guide from references/implementation.md as guide
   generate implementation from design as implementation
   apply build method with guide as implementation
   apply acceptance criteria with criteria as implementation
@@ -181,9 +183,9 @@ implement:
 
 ## Appendix: design guidance
 
-Guidance only; no control semantics. Terms follow the prose skill's
-terminology reference; upstream notices for adapted material live in the
-prose skill's NOTICE file. Both load through the references resource
+Guidance only; no control semantics. Terms follow this package's
+terminology reference; upstream notices for adapted material live in this
+package's NOTICE file. References load through the references resource
 when a branch needs them.
 
 ### Design package shape

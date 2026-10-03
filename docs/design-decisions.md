@@ -62,7 +62,7 @@ Structural validation establishes packaging properties. A self-reviewed worked e
 
 ## D-011: Continue into implementation when requested
 
-Version 0.2.0 preserves D-001's standalone design default and adds a conditional [implementation reference](../skills/full-stack/references/implementation.md). A build request activates it using the same requirements, contracts, and work registry. It requires completion evidence for the selected outcome, not merely a first working slice. Existing subject-project execution rules retain authority.
+Version 0.2.0 preserves D-001's standalone design default and adds a conditional [implementation reference](../skill/full-stack/references/implementation.md). A build request activates it using the same requirements, contracts, and work registry. It requires completion evidence for the selected outcome, not merely a first working slice. Existing subject-project execution rules retain authority.
 
 A separate companion skill would add discovery and handoff cost without a distinct runtime or execution mechanism. A mandatory build mode would violate design-only requests. The conditional reference is the smallest extension supporting both intents; the host still supplies editing, execution, and runtime capabilities.
 
@@ -72,8 +72,14 @@ Keep scope, authority, evidence limits, readiness, and mode selection in the ent
 
 The [proposal review](research/improvement-review.md) records accepted, modified, and rejected suggestions with sources. Compression is an instruction-cost measurement; behavior needs separate evaluation. Neither reduced tokens nor passing samples establishes superiority.
 
+## D-013: Adopt a logic-first entrypoint
+
+The prose entrypoint becomes a SkillWren contract-header plus logic-body file. Routing reads the ~400-token header instead of the full entrypoint; branches, gates, authority, and effects are mechanically checked; the six method references stay as the shared meaning corpus and load on demand. The `version` field now declares the SkillWren format version rather than the project revision.
+
+Alternative: keep the prose entrypoint and the logic draft side by side. Rejected because two competing entrypoints split maintenance and router behavior; the [pilot report](../evals/trials/logic-conversion/pilot-report.md) records the conversion evidence and dogfood findings. Behavior still needs independent evaluation under FS-001; validator-clean is structure, not proof of effect.
+
 ## Inspected predecessor baseline (0.1.0)
 
 Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its repository had no resolvable HEAD during inspection. These identify inspected baselines, not a claim that either working tree was clean.
 
-Relevant files: Recurspec `README.md`, `CONTEXT.md`, bundled `SKILL.md`, `references/design.md`, and `references/resolve.md`; Architectural Reasoning `SKILL.md`, `references/subsystem-specification.md`, and `references/architectural-philosophies.md`. Instructions are adapted selectively; the portable package retains [upstream notices](../skills/full-stack/NOTICE.md).
+Relevant files: Recurspec `README.md`, `CONTEXT.md`, bundled `SKILL.md`, `references/design.md`, and `references/resolve.md`; Architectural Reasoning `SKILL.md`, `references/subsystem-specification.md`, and `references/architectural-philosophies.md`. Instructions are adapted selectively; the portable package retains [upstream notices](../skill/full-stack/NOTICE.md).

@@ -8,7 +8,7 @@ The proposed skill should maintain a small domain vocabulary, a bounded set of o
 
 This report combines foundational requirements and architecture research with empirical work, practitioner definitions, formal methods, and recent LLM studies. Their evidence types matter: a formal result applies within its mathematical model; a case study reports its studied setting; a terminology standard clarifies representation. None validates this new skill as a whole.
 
-The recommendations are design proposals. Their operational form lives in the [skill](../../skills/full-stack/SKILL.md); effectiveness must be assessed through the [evaluation protocol](../../evals/README.md).
+The recommendations are design proposals. Their operational form lives in the [skill](../../skill/full-stack/SKILL.md); effectiveness must be assessed through the [evaluation protocol](../../evals/README.md).
 
 ## 1. Ground words in observable distinctions
 

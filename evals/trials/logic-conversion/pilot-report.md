@@ -1,19 +1,19 @@
 # Pilot report: full-stack logic conversion
 
-Status: draft self-review. This report records a SkillWren logic-first
+Status: draft self-review; promoted to the live entrypoint (see Promotion). This report records a SkillWren logic-first
 pilot of the prose full-stack skill plus author dogfooding. It is
 self-review evidence, not independent evaluation (see follow-ups).
 
 Subject: [full-stack-logic.md](full-stack-logic.md) (`full-stack-logic`,
 v0.4.1) in this directory. The installed prose package under
-`skills/full-stack/` is untouched. Method: SkillWren SPEC v0.4.1 plus
+`skill/full-stack/` was untouched during the pilot. Method: SkillWren SPEC v0.4.1 plus
 authoring guide, both read in full; conversion kept under a distinct
 `-logic` skill id with the prose original installed, per the guide's
 piloting rule.
 
 ## Baseline (prose)
 
-`skillwren check skills/full-stack/SKILL.md`: 2 errors (F1 missing
+`skillwren check skill/full-stack/SKILL.md`: 2 errors (F1 missing
 contract header, F2 missing contract block), 1 warning (W7 `metadata`
 field). Token counts below use ceil(chars/4), the validator's
 approximation, since tiktoken is not installed here.
@@ -151,4 +151,4 @@ Conversion method: SkillWren v0.4.1 (MIT, `Z:\skilldesigner`). No
 SkillWren text is copied into the draft; only the format is
 followed. Full-stack prose remains the behavior authority; upstream
 MIT notices are retained in
-[NOTICE.md](../../../skills/full-stack/NOTICE.md).
+[NOTICE.md](../../../skill/full-stack/NOTICE.md).

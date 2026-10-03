@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$source = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'skills/full-stack')).Path
+$source = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'skill/full-stack')).Path
 if (-not $ProfileDirectory) { throw 'Supply -ProfileDirectory for the target user.' }
 $profileRoot = [IO.Path]::GetFullPath($ProfileDirectory)
 $relativeRoots = @()

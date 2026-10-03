@@ -18,7 +18,7 @@ Inputs may include a new-product prompt, an explicitly selected roadmap outcome,
 
 Research follows the decisions that could change the design. Broad literature exploration belongs to an explicit research assignment, such as this project's initial foundations. Ordinary invocation should not reproduce the entire research program.
 
-Planning is the default deliverable. A request to build or implement activates the conditional [implementation workflow](../skills/full-stack/references/implementation.md) within the selected scope; already authorized work needs no repeated approval. Dependency/tool installation, deployment, publication, and delegation follow applicable task and host permissions. The skill supplies instructions; the host supplies repository access, execution tools, and runtime capabilities.
+Planning is the default deliverable. A request to build or implement activates the conditional [implementation workflow](../skill/full-stack/references/implementation.md) within the selected scope; already authorized work needs no repeated approval. Dependency/tool installation, deployment, publication, and delegation follow applicable task and host permissions. The skill supplies instructions; the host supplies repository access, execution tools, and runtime capabilities.
 
 ## Output contract
 

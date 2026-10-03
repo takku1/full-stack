@@ -20,7 +20,7 @@ def main():
     import tiktoken
 
     encoder = tiktoken.get_encoding("o200k_base")
-    prefix = "skills/full-stack/"
+    prefix = "skill/full-stack/"
     baseline = subprocess.check_output(
         ["git", "rev-parse", args.baseline], cwd=root, text=True
     ).strip()

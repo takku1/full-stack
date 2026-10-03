@@ -9,7 +9,7 @@ from urllib.parse import unquote
 
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
-    skill = root / "skills" / "full-stack"
+    skill = root / "skill" / "full-stack"
     errors = []
     links = 0
     required = [skill / "SKILL.md", skill / "agents" / "openai.yaml"]
