@@ -1,0 +1,59 @@
+{
+  "case": "E02n",
+  "condition": "skill",
+  "prompt": "Design only roadmap B-17 from the supplied context. Keep the current stack and produce a concise implementation handoff. Research only if a decision cannot be resolved from the supplied contracts. Do not implement code.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 17.8,
+    "session_id": "f29cd638-1fa8-4c9d-9b1b-a2046e1e76c6",
+    "cost_usd": 0.09770400000000001,
+    "turns": 5,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 16727,
+      "cache_read_input_tokens": 63270,
+      "output_tokens": 1813,
+      "output_tokens_details": {
+        "thinking_tokens": 226
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16727,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1483,
+          "cache_read_input_tokens": 29657,
+          "cache_creation_input_tokens": 879,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 879
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "# B-17 design handoff: cancel a reservation and show the confirmed outcome\n\nI based this only on `booking-context.md`. No repository code, API schema or `ROADMAP.md` was supplied, so I filed nothing and created no registry. This design stays in chat.\n\n## Scope\n- **Outcome:** a signed-in member can cancel one of their existing reservations from the browser. The UI shows \"cancelled\" only after the server confirms it.\n- **Excluded:** B-18 waitlist promotion, B-19 emails, B-20 offline changes, and any change to `BookingService`.\n- **Constraints:** the stack and deployment are fixed. No research is needed, and none was done.\n\n## Ownership and contracts\n| Concern | Authority | Consequence |\n|---|---|---|\n| Whether a reservation is cancelled | Server (`BookingService`, persistence) | The browser holds no authority. Its state is a view of the server's. |\n| Who may cancel | Server, using the authenticated member | The client sends only the reservation ID and a request ID. It must not send a member ID, and the server ignores one if sent. |\n| Duplicate suppression | Request ID | The client generates one per user intent and reuses it on retry. |\n\nAssumption: the existing authenticated cancel API takes a reservation ID and a request ID. The supplied context doesn't give its endpoint path, response body or error codes, so I haven't invented any.\n\n## Choices\n1. **Confirmed outcome, not optimistic.** The control goes into a pending state and disables on click. The UI shows \"Cancelled\" only on a success response, then refreshes the reservation from the server. The cost is a short wait. The benefit is that the UI can't claim a cancellation the server rejected.\n2. **One request ID per attempt.** It is generated when the user confirms and reused on retry after a network failure or timeout. It is regenerated only after a definitive result. This relies on the server deduplicating by request ID. That is unverified (see blockers).\n3. **Confirmation step.** Cancellation is likely irreversible, so I'd add a confirm prompt before the request. This is a reversible UI default and is easy to drop.\n4. **Failure outcomes.** Each failure leaves the reservation shown as still booked, with a message and a retry:\n   - network error or timeout (outcome unknown, so refresh state before claiming either result)\n   - not found\n   - forbidden\n   - already cancelled\n   - session expired (re-authenticate)\n\n## Increments\n**Increment 1 (conditional on blocker 1): cancel control.**\n- **Requirements:** the control appears only on the member's own active reservations. Pending, success and each failure state are traced from click to visible result. Success is shown only after server confirmation.\n- **Write set:** the client reservation view, plus a thin client call to the existing cancel API. No server changes are expected. The paths are not known, so the implementer finds them.\n- **Prerequisites:** blocker 1, and the location of the existing reservation UI and API client.\n- **Checks (all unexecuted):**\n  - Cancel success shows the confirmed state after refresh.\n  - A double click sends one request and a retry reuses the same request ID.\n  - Not-found, forbidden, already-cancelled and network-failure paths each show the right message and leave the state unchanged.\n  - The request body contains no member ID.\n  - A reservation owned by another member can't be cancelled. This is verified against the server rather than assumed.\n\n## Blockers\n1. **Cancel API response and error contract.** I don't have the success shape, the error codes, or the behavior when a request ID repeats or the reservation is already cancelled. Read the existing `BookingService` endpoint and tests before building. The result-handling logic in increment 1 is conditional until this is read. If the server doesn't deduplicate by request ID, the retry check changes.\n2. **Side effects of cancellation** (seat release, waitlist) are out of scope here. The UI must not promise them.\n\n**Status:** increment 1 is conditional on blocker 1. Nothing is ready to build, and nothing was implemented or run.",
+    "skill_invoked": true,
+    "tool_counts": {
+      "Glob": 1,
+      "Grep": 1,
+      "Skill": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

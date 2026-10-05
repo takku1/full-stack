@@ -1,0 +1,14 @@
+packet: evals\ab\results\2026-10-05-neutral\blind-packet (key: evals\ab\results\2026-10-05-neutral\blind-key.json; keep it from the grader)
+[grade bugfix] ranking ['Z', 'Y', 'X'] cost 0.2182234
+[grade crosscut] ranking ['Y', 'X', 'Z'] cost 0.2473678
+[grade E02n] ranking ['Z', 'X', 'Y'] cost 0.2570852
+[grade E04] ranking ['X', 'Z', 'Y'] cost 0.30405459999999995
+[grade E06] ranking ['Z', 'Y', 'X'] cost 0.2058838
+[grade feature] ranking ['Z', 'Y', 'X'] cost 0.24548140000000002
+packet: evals\ab\results\2026-10-05-invoked\blind-packet (key: evals\ab\results\2026-10-05-invoked\blind-key.json; keep it from the grader)
+[grade bugfix] ranking ['Y', 'X', 'Z'] cost 0.2249622
+[grade crosscut] ranking ['Y', 'X', 'Z'] cost 0.28384620000000005
+[grade E02n] ranking ['Z', 'Y', 'X'] cost 0.2762292
+[grade E04] ranking ['Y', 'X', 'Z'] cost 0.35085259999999996
+[grade E06] ranking ['Y', 'X', 'Z'] cost 0.2693518
+[grade feature] ranking ['Z', 'X', 'Y'] cost 0.30169579999999996

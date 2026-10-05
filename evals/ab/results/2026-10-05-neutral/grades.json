@@ -1,0 +1,330 @@
+{
+  "bugfix": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "acceptance_coverage": "met",
+            "behavior_preservation": "met",
+            "evidence_honesty": "partly",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "acceptance_coverage": "met",
+            "behavior_preservation": "met",
+            "evidence_honesty": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "acceptance_coverage": "met",
+            "behavior_preservation": "met",
+            "evidence_honesty": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        }
+      },
+      "ranking": [
+        "Z",
+        "Y",
+        "X"
+      ],
+      "could_infer_condition": "No. All three are similar minimal single-file fixes; Y and Z have identical diffs, but nothing reveals which condition or workflow produced each."
+    },
+    "cost_usd": 0.2182234
+  },
+  "crosscut": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_bounded_changes": "met",
+            "acceptance_criteria_coverage": "met",
+            "real_integration_and_failures": "met",
+            "state_ownership": "met",
+            "honest_execution_evidence": "partly",
+            "continuation_status": "partly"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Y": {
+          "dimensions": {
+            "scope_bounded_changes": "met",
+            "acceptance_criteria_coverage": "met",
+            "real_integration_and_failures": "met",
+            "state_ownership": "met",
+            "honest_execution_evidence": "met",
+            "continuation_status": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        },
+        "Z": {
+          "dimensions": {
+            "scope_bounded_changes": "met",
+            "acceptance_criteria_coverage": "met",
+            "real_integration_and_failures": "partly",
+            "state_ownership": "met",
+            "honest_execution_evidence": "met",
+            "continuation_status": "met"
+          },
+          "high_impact": [],
+          "score": 7
+        }
+      },
+      "ranking": [
+        "Y",
+        "X",
+        "Z"
+      ],
+      "could_infer_condition": "Not reliably. The code is nearly identical, so probably the same model. X's mention of not using a skill hints that a skill was available; Z's sandbox-blocked shell hints at a more restricted environment. Neither is enough to identify the conditions."
+    },
+    "cost_usd": 0.2473678
+  },
+  "E02n": {
+    "letters": {
+      "X": "plain",
+      "Y": "skill",
+      "Z": "brief"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "uncertain_response_handling": "partly",
+            "interface_end_to_end_coverage": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "partly",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 7
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "uncertain_response_handling": "partly",
+            "interface_end_to_end_coverage": "partly",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "partly",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 6
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "uncertain_response_handling": "met",
+            "interface_end_to_end_coverage": "met",
+            "evidence_honesty": "partly",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        }
+      },
+      "ranking": [
+        "Z",
+        "X",
+        "Y"
+      ],
+      "could_infer_condition": "Not confidently. Y's 'filed nothing and created no registry' and its Write set/Prerequisites/Checks layout, and Z's 'Increments, each with checks', suggest structured workflow scaffolding; X reads like a plain direct answer. Context file was unavailable to verify grounding of Z's server-behavior claims."
+    },
+    "cost_usd": 0.2570852
+  },
+  "E04": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met",
+            "independent_design_and_conditional_marking": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "partly",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met",
+            "independent_design_and_conditional_marking": "met"
+          },
+          "high_impact": [],
+          "score": 7.5
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "met",
+            "evidence_honesty": "partly",
+            "usable_delivery_order": "partly",
+            "effort_appropriate": "met",
+            "independent_design_and_conditional_marking": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        }
+      },
+      "ranking": [
+        "X",
+        "Z",
+        "Y"
+      ],
+      "could_infer_condition": "Partly: X ('[skill] skill package', 'the flow's conditional mark') and Y ('Only the skill file exists') were produced with a skill loaded; Z ('repo contains only .gitignore') appears to be a no-skill baseline. Could not tell which skill variant X and Y each used."
+    },
+    "cost_usd": 0.30405459999999995
+  },
+  "E06": {
+    "letters": {
+      "X": "plain",
+      "Y": "brief",
+      "Z": "skill"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "effort_appropriate": "met",
+            "evidence_honesty": "partly",
+            "usable_delivery": "met"
+          },
+          "high_impact": [
+            "Claims a case-insensitive search found no other matches, contradicted by matches in design-method.md and run_guard.py (possible misreported evidence; minor)"
+          ],
+          "score": 7
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "effort_appropriate": "met",
+            "evidence_honesty": "partly",
+            "usable_delivery": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "effort_appropriate": "met",
+            "evidence_honesty": "met",
+            "usable_delivery": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        }
+      },
+      "ranking": [
+        "Z",
+        "Y",
+        "X"
+      ],
+      "could_infer_condition": "Not reliably. Diffs are identical; X's mention of 'the skill' and ROADMAP.md hints that workflow/skill files were in the repo, but no response clearly shows how it was produced."
+    },
+    "cost_usd": 0.2058838
+  },
+  "feature": {
+    "letters": {
+      "X": "plain",
+      "Y": "skill",
+      "Z": "brief"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "acceptance_coverage": "met",
+            "integration_and_failures": "partly",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "partly",
+            "bounded_changes_and_status": "partly"
+          },
+          "high_impact": [
+            "Both files rewritten in full (likely line-ending/encoding change), against 'keep the change local', while the answer claims 'nothing else was touched'"
+          ],
+          "score": 6
+        },
+        "Y": {
+          "dimensions": {
+            "acceptance_coverage": "met",
+            "integration_and_failures": "partly",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "met",
+            "bounded_changes_and_status": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Z": {
+          "dimensions": {
+            "acceptance_coverage": "met",
+            "integration_and_failures": "partly",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "met",
+            "bounded_changes_and_status": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        }
+      },
+      "ranking": [
+        "Z",
+        "Y",
+        "X"
+      ],
+      "could_infer_condition": "No. All three read like single-agent sessions; X's whole-file rewrite hints at a different file-writing path but does not identify the condition."
+    },
+    "cost_usd": 0.24548140000000002
+  }
+}

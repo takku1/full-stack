@@ -1,0 +1,59 @@
+{
+  "case": "E02n",
+  "condition": "skill",
+  "prompt": "Design only roadmap B-17 from the supplied context. Keep the current stack and produce a concise implementation handoff. Research only if a decision cannot be resolved from the supplied contracts. Do not implement code.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 27.4,
+    "session_id": "31009464-6643-47a2-bbf9-a89a06ae1ce8",
+    "cost_usd": 0.1161016,
+    "turns": 4,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 18184,
+      "cache_read_input_tokens": 68618,
+      "output_tokens": 2963,
+      "output_tokens_details": {
+        "thinking_tokens": 554
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 18184,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2576,
+          "cache_read_input_tokens": 31114,
+          "cache_creation_input_tokens": 879,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 879
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "# B-17 design: cancel an existing reservation\n\n**Filing:** This design stays in chat. No source tree, design note, or `ROADMAP.md` is in the supplied context, so I wrote no files and made no registry update. **Research:** none was needed. **Checks:** none were run, and all checks below are unexecuted.\n\n## 1. Scope\n- **Outcome:** a member viewing their reservation can cancel it and sees a confirmed result.\n- **Work ID:** B-17 only. B-18, B-19 and B-20 are excluded and unselected.\n- **Exclusions:**\n  - no new endpoint\n  - no client-side seat release\n  - no policy changes\n  - no waitlist, email or offline behavior\n  - no framework or storage changes\n- **Disposition:** the whole increment is **ready**, subject to the path discovery in section 4. No costly-to-reverse commitment is involved.\n\n## 2. Ownership and contracts\n\n| State or decision | Authority | Browser's role |\n|---|---|---|\n| Cancellation, capacity, authorization | Server `BookingService` (existing authenticated API) | Sends reservation ID and request ID only. It never sends a member ID for authorization. |\n| Reservation status | Server | The reservation-details cache is a copy. It is written only from a server response or a details query. |\n| Pending, uncertain and error display | Reservation screen's local UI state | Not persisted. |\n\nResponse handling, trigger to observable result:\n\n| Server outcome | Client behavior |\n|---|---|\n| Confirmed cancellation | Update the cached reservation, then show the \"cancelled\" status and a confirmation message. |\n| Already cancelled | Same as confirmed, with copy such as \"This reservation was already cancelled.\" Nothing was released twice. |\n| Denial | Inline error. Do not change the cache. |\n| Missing reservation | Inline error. Do not change the cache. Offer no retry. |\n| Temporary failure, network error or timeout | Enter the **uncertain** state. Never assume rollback. Run the details query. If it shows cancelled, show the confirmed outcome. If it shows active, show an inline error with retry. If the query also fails, show \"couldn't confirm, check again\" with a re-query action. |\n\n- **Request ID:** generate one per cancel intent and reuse it for every retry of that intent. This is safe because the server is idempotent. Generate a new one only after the reservation is known to be active again, or after a fresh user action following a definitive failure.\n- **Double submit:** disable the button while a request or reconcile is in flight, using the existing button component's disabled or busy state if it has one.\n- **Cancellation:** if the member leaves the screen mid-request, the server outcome stands. The next details load reconciles the display.\n- **Confirmed outcome:** it appears only after a server response or a reconciling query. There is no optimistic \"cancelled\" display.\n- **Control visibility:** show the control only for a reservation whose status is not cancelled. After cancellation, replace it with the cancelled status and message.\n\n## 3. Choices\n- **Reuse:** use the existing request client, details cache, inline-error component and accessible button. This is dictated by the constraints.\n- **Confirmation step (reversible default):** the first activation puts the button in a \"Confirm cancellation\" state, using the same button component, with a cancel-the-cancel option. The second activation sends the request. If product wants no confirmation, delete the extra state. Revisit if the existing UI already has a standard confirm pattern.\n- **Proposed copy:** this is not policy.\n  - Button: \"Cancel reservation\"\n  - Success: \"Your reservation was cancelled.\"\n  - Already cancelled: \"This reservation was already cancelled.\"\n  - Uncertain: \"We couldn't confirm the cancellation. Checking\u2026\"\n- **Accessibility:** move focus to the status message after the outcome, and announce results through the inline-error component or a polite live region, whichever the existing UI does.\n\n## 4. Increments\n\n**I-1 (ready): cancellation control and outcome handling on the reservation screen**\n- **Requirements:** the behaviors in section 2.\n- **Write set:** the reservation screen component, plus a small client call wrapper if the request client's conventions call for one.\n  - The source paths are **not supplied**. The implementer must discover them and record them before starting.\n  - Do not guess paths.\n- **Prerequisites (assumptions with cost if false):**\n  - The wire format and exact name of the \"already cancelled\" and \"temporary failure\" responses must be read from the existing API client or contract. If the client collapses them, I-1 must adapt.\n  - The cached reservation status vocabulary must include a cancelled value. If it doesn't, the cache update would need a contract decision. Stop and flag it rather than invent one.\n  - The request client must allow a caller-supplied request ID. If it doesn't, stop and flag it. Do not work around it with a new endpoint.\n- **Checks (all unexecuted):**\n  1. Confirmed response: cache is updated and the success message is shown.\n  2. Already-cancelled response: the same cancelled state is shown with the already-cancelled copy.\n  3. Denial and missing reservation: inline error, cache unchanged.\n  4. Temporary failure: uncertain state, then the details query reconciles to cancelled or active.\n  5. Network drop after the server commit: the reconciling query shows cancelled and the confirmed outcome is displayed, with no second capacity release.\n  6. Retry reuses the same request ID.\n  7. The button is disabled while a request is pending, so a double click sends one request.\n  8. Keyboard-only operation and focus after the outcome.\n  9. The control is absent for a cancelled reservation.\n  10. No client code sends a member ID or changes capacity.\n- **Status:** ready.\n\n## 5. Blockers\nNone. The three prerequisites in I-1 are verification items for the implementer, not decisions waiting on the user. If any proves false, mark I-1 blocked and report it.\n\n## 6. Handoff notes\n- Build only on request. This is design only, and no code was written.\n- Self-review only. No independent evaluation was done.\n- Update the B-17 registry entry when the roadmap file is available. None was supplied.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Glob": 1,
+      "Grep": 1,
+      "Read": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

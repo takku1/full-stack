@@ -1,0 +1,67 @@
+[
+  {
+    "id": "bugfix",
+    "kind": "implement",
+    "workspace": "fixtures/bugfix/starter",
+    "hidden": "fixtures/bugfix/hidden",
+    "expected_write_set": [
+      "counts.py",
+      "test_counts.py"
+    ],
+    "prompt": "Fix `format_count(0)` returning an empty string. Return \"0\" for zero and preserve existing positive-count formatting. Keep this change local and run the existing checks."
+  },
+  {
+    "id": "feature",
+    "kind": "implement",
+    "workspace": "fixtures/feature/starter",
+    "hidden": "fixtures/feature/hidden",
+    "expected_write_set": [
+      "inventory.py",
+      "test_inventory.py",
+      "README.md"
+    ],
+    "prompt": "Add a `--json` flag to `python inventory.py list` that prints the items as a JSON array in file order with the same fields. Keep the default text output exactly as it is, add no dependencies, keep the change local, and run the existing checks."
+  },
+  {
+    "id": "crosscut",
+    "kind": "implement",
+    "workspace": "fixtures/crosscut/starter",
+    "hidden": "fixtures/crosscut/hidden",
+    "expected_write_set": [
+      "tasks/store.py",
+      "tasks/__main__.py",
+      "test_tasks.py",
+      "README.md"
+    ],
+    "prompt": "Add archiving to this task tracker: `python -m tasks archive <id>` moves a completed task out of the active list into an archive that persists across runs, and `python -m tasks list --archived` shows archived tasks. Archiving an unknown, incomplete, or already archived task must exit nonzero and leave the stored data unchanged. Existing data files and commands must keep working, and task ids must not be reused. Run the existing checks."
+  },
+  {
+    "id": "E02n",
+    "kind": "design",
+    "source_case": "E02",
+    "workspace_files": {
+      "booking-context.md": "../fixtures/booking-context.md"
+    },
+    "prompt_from_case": "E02",
+    "prompt_replace": [
+      "Use full-stack to design only",
+      "Design only"
+    ]
+  },
+  {
+    "id": "E04",
+    "kind": "design",
+    "source_case": "E04",
+    "prompt_from_case": "E04",
+    "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional."
+  },
+  {
+    "id": "E06",
+    "kind": "design",
+    "source_case": "E06",
+    "workspace_files": {
+      "docs/button-label.txt": "../trials/design/E06/before.txt"
+    },
+    "prompt_from_case": "E06"
+  }
+]

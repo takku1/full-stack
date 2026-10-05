@@ -1,0 +1,63 @@
+{
+  "case": "feature",
+  "condition": "plain",
+  "prompt": "Add a `--json` flag to `python inventory.py list` that prints the items as a JSON array in file order with the same fields. Keep the default text output exactly as it is, add no dependencies, keep the change local, and run the existing checks.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 21.3,
+    "session_id": "e7aa62c3-673a-4ff8-baf7-37e4f3045844",
+    "cost_usd": 0.1150902,
+    "turns": 8,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 14978,
+      "cache_read_input_tokens": 197881,
+      "output_tokens": 1557,
+      "output_tokens_details": {
+        "thinking_tokens": 131
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 14978,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 243,
+          "cache_read_input_tokens": 28288,
+          "cache_creation_input_tokens": 499,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 499
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`python inventory.py list --json` now prints the items as a JSON array in file order, with the same `sku`, `name` and `qty` fields. I ran `python -m unittest` and both tests pass, the existing text test and a new JSON one. I also ran both forms by hand, and the default text output is unchanged.\n\n- **`inventory.py`:** I added the `--json` flag and updated the usage line in the module docstring. The change is 6 lines and adds no dependencies.\n- **`test_inventory.py`:** I added `test_json_listing`. It checks the SKU order and one full item.\n\nMy first write converted both files from LF to CRLF line endings, which made the diff look like a full rewrite. I restored LF, so the diff is now just the intended lines.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 7
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "inventory.py",
+    "test_inventory.py"
+  ],
+  "diff": "diff --git a/inventory.py b/inventory.py\nindex b6e69a5..a67df74 100644\n--- a/inventory.py\n+++ b/inventory.py\n@@ -1,4 +1,4 @@\n-\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH]\"\"\"\n+\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH] [--json]\"\"\"\n import argparse\n import json\n import sys\n@@ -21,9 +21,11 @@ def main(argv=None):\n     sub = parser.add_subparsers(dest=\"command\", required=True)\n     listing = sub.add_parser(\"list\", help=\"list items\")\n     listing.add_argument(\"--file\", default=\"items.json\")\n+    listing.add_argument(\"--json\", action=\"store_true\", help=\"print items as a JSON array\")\n     args = parser.parse_args(argv)\n     if args.command == \"list\":\n-        print(render(load(args.file)))\n+        items = load(args.file)\n+        print(json.dumps(items) if args.json else render(items))\n     return 0\n \n \ndiff --git a/test_inventory.py b/test_inventory.py\nindex f39cfbf..decdf55 100644\n--- a/test_inventory.py\n+++ b/test_inventory.py\n@@ -1,5 +1,6 @@\n import contextlib\n import io\n+import json\n import unittest\n \n import inventory\n@@ -19,6 +20,13 @@ class ListTest(unittest.TestCase):\n         self.assertIn(\"Hex nut\", out)\n         self.assertIn(\"C-310\", out)\n \n+    def test_json_listing(self):\n+        code, out = run(\"list\", \"--json\")\n+        self.assertEqual(code, 0)\n+        items = json.loads(out)\n+        self.assertEqual([i[\"sku\"] for i in items], [\"A-100\", \"B-220\", \"C-310\"])\n+        self.assertEqual(items[1], {\"sku\": \"B-220\", \"name\": \"Hex nut\", \"qty\": 75})\n+\n \n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

@@ -1,0 +1,200 @@
+[
+  {
+    "case": "bugfix",
+    "cond": "plain",
+    "cost": 0.0766,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "bugfix",
+    "cond": "brief",
+    "cost": 0.0769,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "bugfix",
+    "cond": "skill",
+    "cost": 0.0767,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "feature",
+    "cond": "plain",
+    "cost": 0.0811,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 2,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "feature",
+    "cond": "brief",
+    "cost": 0.1125,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 2,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "feature",
+    "cond": "skill",
+    "cost": 0.115,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 2,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "crosscut",
+    "cond": "plain",
+    "cost": 0.2268,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 3,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "crosscut",
+    "cond": "brief",
+    "cost": 0.2255,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 3,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "crosscut",
+    "cond": "skill",
+    "cost": 0.217,
+    "skill": false,
+    "hidden": 0,
+    "outside": 0,
+    "files": 3,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E02n",
+    "cond": "plain",
+    "cost": 0.0739,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E02n",
+    "cond": "brief",
+    "cost": 0.0938,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E02n",
+    "cond": "skill",
+    "cost": 0.0977,
+    "skill": true,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E04",
+    "cond": "plain",
+    "cost": 0.1884,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E04",
+    "cond": "brief",
+    "cost": 0.1953,
+    "skill": true,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E04",
+    "cond": "skill",
+    "cost": 0.2779,
+    "skill": true,
+    "hidden": null,
+    "outside": 0,
+    "files": 0,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E06",
+    "cond": "plain",
+    "cost": 0.0717,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E06",
+    "cond": "brief",
+    "cost": 0.0713,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "E06",
+    "cond": "skill",
+    "cost": 0.0804,
+    "skill": false,
+    "hidden": null,
+    "outside": 0,
+    "files": 1,
+    "questions": 0,
+    "status": "success"
+  }
+]

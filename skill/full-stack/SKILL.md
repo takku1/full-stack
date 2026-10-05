@@ -1,43 +1,44 @@
 ---
 skill: full-stack
 name: full-stack
-description: Turn a software request into a scoped design with ownership, contracts, and ordered work; implement when asked.
+description: Design, and build when asked, a change spanning components, state, or contracts. Not for isolated routine edits.
 version: 0.4.1
-purpose: Turn a software request into a scoped design with ownership, contracts, and ordered work; implement when asked.
+purpose: Scope a cross-component change into owners, contracts, and ordered work.
 accepts:
   request: { type: Text, required: true }
   subject: { type: Path, required: false }
   criteria: { type: Text, required: false }
+  design: { type: Text, required: false }
+  filing: { type: "Enum[files, chat]", required: false }
 produces:
   design: { type: Text }
   report: { type: Text, when: implementing }
 owns-when:
-  - user wants a scoped design for a software change
+  - user wants a design for a cross-component change
   - user wants to design and implement a feature across components
-  - user wants a roadmap slice elaborated into ordered work
+  - user wants a roadmap slice turned into ordered work
 requires:
   design: [request exists]
   implement: [request exists]
 flows: [design, implement]
 authority:
-  user-decides: [outcome or authority to pursue, authorize a costly-to-reverse commitment, acceptance criteria for the build]
-  system-decides: [whether the scope is unambiguous, whether contracts are compatible, whether the design is ready, whether checks pass]
+  user-decides: [outcome or authority to pursue, authorize a costly-to-reverse commitment, build acceptance criteria]
+  system-decides: [whether scope is unambiguous, whether contracts are compatible, whether design is ready, whether checks pass]
   system-may: [choose reversible ordinary defaults, suggest scope splits]
-  system-must-not: [expand scope without authorization, invent existing interfaces or source paths, treat mock data as working behavior, mark unexecuted checks as passed]
+  system-must-not: [expand scope without authorization, invent existing interfaces or source paths, treat mock data as working behavior, mark unexecuted checks as passed, build conditional work]
 effects:
-  reads: [subject, references, registry]
+  reads: [subject, references, registry, design_docs, run_log]
   creates: [design_docs]
-  mutates: [subject, registry]
+  mutates: [subject, registry, design_docs, run_log]
 risk: medium
 cost: expensive
-budget: { header: 400, body: 2500 }
+budget: { header: 400, body: 3000 }
 ---
 
 # Full Stack
 
-Logic-first entrypoint: control is structured; method meaning lives in this
-package's references. Conversion evidence and cost accounting are recorded
-in the project's logic-conversion pilot report.
+Structured entrypoint: the fenced blocks are instructions, not a program.
+The appendix defines every step in plain language.
 
 ```contract
 resources:
@@ -45,30 +46,36 @@ resources:
     path: subject repository
     access: read+create
   design_docs:
-    path: design documents
-    access: create
+    path: the subject's existing design note for the affected component, else its documented design location, else docs/design/<outcome-slug>.md
+    access: read+create
   registry:
-    path: subject work tracker nearest the changed component, if any
+    path: the subject's declared work registry (Recurspec ROADMAP.md), else the tracker nearest the changed component; none means skip
     access: read+create
   references:
     path: references/*.md
     access: read
     immutable: true
+  run_log:
+    path: run records kept by scripts/run_guard.py under the subject's git directory
+    access: read+create
 always:
+  follow subject instructions over this package's defaults
   preserve authoritative documents, identifiers, and project vocabulary
   preserve settled user decisions
   keep current state, target state, and migration distinct
   link requirements, decisions, realization, and checks
+  read target files and registry entries before changing them
+  leave uncommitted edits made outside this run, and build or run resources held by another process, untouched
   mark unexecuted checks as unexecuted
-  confirm target files have no concurrent uncommitted edits
 never:
   expand scope without authorization
   invent existing interfaces or source paths
   treat mock data as working behavior
   implement without a build request
+  build conditional or blocked work
   deploy, publish, or install tools beyond task authorization
   mark unexecuted checks as passed
-  create a new registry file without authorization
+  create a registry file, or a design file the subject's instructions forbid, without authorization
 ```
 
 ```logic
@@ -76,13 +83,6 @@ design:
   require request exists
     otherwise:
       abort with "A request is required."
-
-  if request is an isolated routine edit:
-    generate minimal edit note from request as design
-    if subject has a work tracker:
-      apply registry update with design as entry
-      write entry with registry
-    return design as design
 
   if request is ambiguous on outcome or authority:
     ask user to clarify the outcome or authority as clarification
@@ -92,10 +92,20 @@ design:
 
   if subject is known:
     read instructions from subject as context
+    if subject has existing contracts, providers, or registries:
+      read integration guide from references/existing-projects.md as integration
+      apply registry resolution with integration as context
     apply grounding with context as scope
     if subject has a work tracker:
       read existing entries from registry as entries
       apply registry entries with entries as scope
+
+  if request is an isolated routine edit:
+    generate minimal edit note from scope as design
+    if subject has a work tracker:
+      apply registry update with design as entry
+      write entry with registry
+    return design as design
 
   when terms are ambiguous:
     read terminology from references/terminology.md as terms
@@ -104,6 +114,9 @@ design:
   when decomposition is substantial:
     read design method from references/design-method.md as method
     apply boundary method with method as scope
+
+  if scope splits suggest a smaller increment:
+    apply split with scope as scope
 
   when a reversible ordinary choice applies:
     apply default with scope as scope
@@ -122,10 +135,7 @@ design:
     read integration guide from references/existing-projects.md as integration
     apply delta with integration as design
 
-  if scope splits suggest a smaller increment:
-    apply split with scope as scope
-
-  verify design states outcome, contracts, prerequisites, and checks
+  verify design has scope, ownership and contracts, choices, increments, and blockers sections matching the selected scope
     otherwise:
       apply readiness repair with design as design
       retry
@@ -139,6 +149,9 @@ design:
         return to finish design
 
   label finish design:
+
+  if design should stay in chat:
+    return design as design
 
   write design with design_docs
   if subject has a work tracker:
@@ -163,11 +176,15 @@ implement:
     ask user to clarify the outcome or authority as clarification
     apply update with clarification as request
 
-  run design with:
-    request = request
+  unless design is known:
+    run design with:
+      request = request
+
+  apply recheck with design as design
+  apply ready selection with design as selected
 
   read implementation guide from references/implementation.md as guide
-  generate implementation from design as implementation
+  generate implementation from selected as implementation
   apply build method with guide as implementation
   apply acceptance criteria with criteria as implementation
 
@@ -175,98 +192,144 @@ implement:
     read contracts from subject as contracts
     apply fit with contracts as implementation
 
-  verify implementation meets the acceptance criteria
+  apply write set with implementation as claim
+  write claim with run_log
+  verify run_log shows no collision with outside edits or open runs
     otherwise:
-      apply correction with implementation as implementation
+      apply collision resolution with implementation as implementation
+      apply write set with implementation as claim
+      write claim with run_log
       retry
 
   write implementation with subject
+  apply check plan with criteria as checks
+  write checks with run_log
+
+  verify run_log shows every change inside the write set and each acceptance criterion met or blocked by an executed check
+    otherwise:
+      apply correction with implementation as implementation
+      write implementation with subject
+      write checks with run_log
+      retry
+
   if subject has a work tracker:
     apply registry update with implementation as entry
     write entry with registry
-  generate completion report from implementation as completion
+  read run report from run_log as evidence
+  generate completion report from evidence as completion
+  apply run close with claim as claim
+  write claim with run_log
+  if subject uses Recurspec:
+    apply node evidence proposal with implementation as completion
 
   return:
     design
     report = completion
 ```
 
-## Appendix: design guidance
+## Appendix: reading the flows
 
-Guidance only; no control semantics. Terms follow this package's
-terminology reference; upstream notices for adapted material live in this
-package's NOTICE file. References load through the references resource
-when a branch needs them.
+No interpreter runs this file; the model reads the blocks as ordered
+instructions. The SkillWren validator checks structure only (bindings,
+declared effects, no write before a question). Hosts read `name` and
+`description`; other header fields are SkillWren declarations. `version`
+is the SkillWren format, not the package release. `read+create` means
+readable and writable.
+
+`if`/`when` run their block when the condition holds, `unless` when it
+does not. `require` stops the flow unless its `otherwise:` repairs;
+`verify` checks evidence, `otherwise:` repairs, `retry` rechecks. `ask`
+waits for the user. `read`/`write` touch only the named resource;
+`generate` and `apply` change only the draft named after `as`; a loaded
+reference is not reread.
+
+### What is checked mechanically
+
+`scripts/run_guard.py` (Python 3, git) enforces the implement flow's
+scope and evidence claims; its log, not memory, is the record.
+**write set + write claim**: list the files and directories the
+selected work may change, then `run_guard.py start --write-set ...
+--label <work ID>`. Exit 3 is a collision. **check plan + write checks**:
+run every acceptance check through `run_guard.py exec --criterion "<c>"
+-- <command>`. The verify gate is `run_guard.py check` exiting 0 plus a
+recorded passing (or blocked) check per criterion. **run report**:
+`run_guard.py report`, pasted into the completion report. **run close**:
+`run_guard.py finish`. `--shared` claims files other workers also
+edit; an optional host hook (README) blocks out-of-scope edits.
+Without the guard, check with `git status` and `git diff` and say the
+run was unguarded. All else relies on the model.
+
+### Step meanings
+
+- **update**: fold the user's answer into the request.
+- **registry resolution**: pick the registry the resource line names.
+- **grounding**: separate current state, target state, and migration.
+- **registry entries**: link existing work IDs; never renumber.
+- **term fixes / boundary method / choice / shape / delta / build
+  method / fit**: apply the named reference or the subject's contracts.
+- **split**: shrink scope to the smallest increment that delivers the
+  outcome; record the rest as deferred.
+- **default**: take the reversible ordinary option and record it.
+- **readiness repair**: fill a gap from evidence, or move it to blockers
+  and mark the affected work blocked.
+- **conditional mark**: mark work depending on the declined commitment
+  conditional; independent work stays ready.
+- **registry update**: update this work's entry, else add one.
+- **recheck**: confirm a supplied design's facts still hold; revise only
+  stale parts; settled decisions stay settled.
+- **ready selection**: build only ready work; report the rest.
+- **acceptance criteria**: tie each criterion to a check.
+- **collision resolution**: narrow the write set around outside edits,
+  or mark the colliding work blocked until the other run finishes.
+- **correction**: repair the failing edit; the same failure twice with
+  the same evidence becomes a blocked criterion, not another repair.
+- **node evidence proposal**: list Recurspec node evidence updates as
+  proposed, not applied.
+
+### Response outcomes
+
+For the costly-commitment question: **authorized** makes dependent work
+ready; **declined** applies the conditional mark and files the design;
+**dismissed or unanswered** stops with nothing written and shows the
+design in chat. Every return lists work as ready, conditional, or
+blocked.
+
+### Filing
+
+A design stays in chat when `filing` is chat, the request says so, no
+repository is known, or the subject forbids new design files and has no
+note to extend. Otherwise update the component's existing design note,
+else write one file at the documented design location, else
+`docs/design/<outcome-slug>.md`; reruns update that file.
 
 ### Design package shape
 
-Every design returns the same sections in order: scope (outcome, work
-IDs, constraints, exclusions, dispositions), ownership and contracts
-(authoritative state, readers, writers, derived views), choices
-(alternatives, evidence, fit gaps, revisit conditions), increments
-(requirements, paths, prerequisites, checks, closure evidence), and
-blockers (unresolved decisions with affected work). The readiness
-verify gate enforces this shape; a design missing any section is
-repaired, not returned.
+A substantial design returns, in order: scope (outcome, work IDs,
+constraints, exclusions, dispositions), ownership and contracts,
+choices (alternatives, evidence, fit gaps, revisit conditions),
+increments (requirements, write set, prerequisites, checks, ready /
+conditional / blocked), and blockers; an empty section reads "none". A
+routine edit returns what changes and what verifies it.
 
 ### Generate guidance
 
-Ground before designing: separate current state, target state, and
-migration. Classify every discovery as required now, existing
-dependency, unresolved prerequisite, or deferred enhancement; discovery
-never authorizes expansion. State consequential assumptions with their
-cost if false; prefer reversible ordinary choices and continue.
+Ground before designing. Classify every discovery as required now,
+existing dependency, unresolved prerequisite, or deferred enhancement;
+discovery never authorizes expansion. State consequential assumptions
+with their cost if false. Trace each behavior from trigger to observable
+result, including failure, retry, cancellation, and recovery. Give each
+state set one authority; a cache never gains authority by copying.
+Match every consumer assumption to a provider guarantee or an explicit
+unresolved condition. Split where hidden decisions, authority, or
+lifecycle differ, not by screens or directories. Missing compatibility
+evidence makes the affected selection conditional; never invent it.
+Without a repository, ground on what the request supplies.
 
-Trace each behavior from trigger through state transitions to the
-observable result, including failure, retry, cancellation, and
-recovery. Allocate one authority per state set or name the coordination
-protocol; a cache or projection never gains authority by copying data.
-Research only uncertainty that could change the design, from primary
-sources with dates and applicability limits; preserve valid existing
-choices and assign fit gaps to owned work. Match every consumer
-assumption to a provider guarantee or an explicit unresolved condition.
-Sequence bounded end-to-end increments; resolve shared interface work
-before claiming independence. Label every double with its simulated
-guarantees, limits, and replacement condition.
+### Concurrent work
 
-Split where different decisions need hiding, authority changes hands,
-or lifecycle differs. Screens, nouns, directories, and workflow steps
-do not dictate components. A next increment is ready when its outcome,
-contracts, prerequisites, and checks are usable; private choices may
-remain. Check gaps within responsibilities, across contracts, and
-across the outcome. Apply quality concerns only when the scenario
-triggers them, and explain excluding a material concern.
-
-### Routine edits and blocked evidence
-
-An isolated routine edit returns a minimal note: what changes, what
-verifies it, nothing else. No architecture tree, no research. When
-compatibility evidence is unavailable, mark the affected selection
-conditional with the exact evidence needed, and continue the
-independent design; never invent the missing facts and never abandon
-the whole task.
-
-### Requests without a repository
-
-The request input carries pasted fixtures, prototypes, and quoted
-contracts when no subject path is given; grounding reads the request
-itself and skips repository inspection rather than failing.
-
-### Retry discipline
-
-A retry re-executes its gate after the repair is applied. If the same
-gate fails twice with the same evidence, stop repairing and record the
-blocker with the affected work instead of looping.
-
-### Implementation notes
-
-Implement consumes the design flow's output; it never re-derives
-scope. Connect one real path through the required boundaries first,
-then finish all selected transitions, failures, and lifecycle
-obligations. Reuse existing facilities. Test doubles may exercise a
-contract early but never substitute for required behavior. Run the
-project's checks, exercise the real user or system path, and report
-implemented behavior with actual evidence and limits. State the
-acceptance criteria used, flagging any derived rather than user-stated,
-so the user can correct them after the fact. Record unfinished
-required work, blockers, and the next resumption step in the registry.
+Uncommitted changes this run did not make belong to someone else: never
+revert, overwrite, or reformat them. Parallel workers each claim a
+disjoint write set; files every package needs (manifests, lockfiles,
+registries, generated code) get one owning package, and the others
+sequence after it. A binary, emulator, or port held by another process
+means wait; never kill it.

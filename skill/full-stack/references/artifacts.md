@@ -40,8 +40,10 @@ This table is a navigational projection. Requirement meaning belongs in the spec
 
 ## Work package
 
-Record the outcome and selected requirement/contract IDs, responsible modules and inspected/proposed paths, dependency availability, real integration path, delivery prerequisites, acceptance checks, and closure evidence. Include migration/reversal considerations when consequential and a work owner only if known. State unresolved choices that block implementation.
+Record the outcome and selected requirement/contract IDs, responsible modules and inspected/proposed paths, the write set (files and directories the package may change), dependency availability, real integration path, delivery prerequisites, acceptance checks, and closure evidence. Include migration/reversal considerations when consequential and a work owner only if known. State unresolved choices that block implementation.
 
 For a temporary double, name the simulated contract and guarantees, unsupported behavior, real provider, and replacement/check condition. Link its remaining integration work in the same registry. A passing double-based test cannot close a requirement for real integration.
+
+When packages may run in parallel, their write sets must be disjoint. Give each shared file (manifest, lockfile, registry, generated code, a central route or schema table) one owning package; the others list it as a prerequisite and sequence after it, or hand their change to the owner as a stated request. Different files alone do not establish independence: an interface the packages share still orders them.
 
 An investigation package names the question, evidence/experiment, and decision it unlocks. An implementation package must not quietly require its implementer to decide unresolved product semantics. Private choices such as helper functions or local data representation can remain open.

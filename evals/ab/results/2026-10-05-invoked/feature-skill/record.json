@@ -1,0 +1,64 @@
+{
+  "case": "feature",
+  "condition": "skill",
+  "prompt": "Add a `--json` flag to `python inventory.py list` that prints the items as a JSON array in file order with the same fields. Keep the default text output exactly as it is, add no dependencies, keep the change local, and run the existing checks.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 38.9,
+    "session_id": "0104d563-ee05-45e1-96d8-e35389027f52",
+    "cost_usd": 0.1709822,
+    "turns": 11,
+    "usage": {
+      "input_tokens": 22,
+      "cache_creation_input_tokens": 19789,
+      "cache_read_input_tokens": 324561,
+      "output_tokens": 2687,
+      "output_tokens_details": {
+        "thinking_tokens": 231
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 19789,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 370,
+          "cache_read_input_tokens": 33216,
+          "cache_creation_input_tokens": 382,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 382
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`python inventory.py list --json` now prints the items as a JSON array in file order, with the same `sku`, `name` and `qty` fields. I treated this as a routine edit, so I didn't write a design note or registry entry.\n\n- **Default output:** `list` without the flag is unchanged. I ran it and the text rows still look the same, and the existing text test passes.\n- **Checks:** I ran `python -m unittest` and both tests pass. I added `test_json_listing`, which checks that the `--json` output matches `items.json`.\n- **Change size:** the diff is 11 insertions and 2 deletions across `inventory.py` and `test_inventory.py`. There are no new dependencies.\n- **Unguarded run:** I didn't use `run_guard.py`, so this run is unguarded. I checked scope with `git diff --stat` instead.\n- **Line endings:** my first write converted both files from LF to CRLF, which inflated the diff to about 120 lines. I converted them back to LF to match the original.\n- **Empty inventory:** with `--json`, an empty item list prints `[]`. The text mode still prints `no items`.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 8,
+      "PowerShell": 2
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "inventory.py",
+    "test_inventory.py"
+  ],
+  "diff": "diff --git a/inventory.py b/inventory.py\nindex b6e69a5..f27fdc7 100644\n--- a/inventory.py\n+++ b/inventory.py\n@@ -1,4 +1,4 @@\n-\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH]\"\"\"\n+\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH] [--json]\"\"\"\n import argparse\n import json\n import sys\n@@ -21,9 +21,11 @@ def main(argv=None):\n     sub = parser.add_subparsers(dest=\"command\", required=True)\n     listing = sub.add_parser(\"list\", help=\"list items\")\n     listing.add_argument(\"--file\", default=\"items.json\")\n+    listing.add_argument(\"--json\", action=\"store_true\", help=\"print items as a JSON array\")\n     args = parser.parse_args(argv)\n     if args.command == \"list\":\n-        print(render(load(args.file)))\n+        items = load(args.file)\n+        print(json.dumps(items, indent=2) if args.json else render(items))\n     return 0\n \n \ndiff --git a/test_inventory.py b/test_inventory.py\nindex f39cfbf..8233883 100644\n--- a/test_inventory.py\n+++ b/test_inventory.py\n@@ -1,5 +1,6 @@\n import contextlib\n import io\n+import json\n import unittest\n \n import inventory\n@@ -19,6 +20,12 @@ class ListTest(unittest.TestCase):\n         self.assertIn(\"Hex nut\", out)\n         self.assertIn(\"C-310\", out)\n \n+    def test_json_listing(self):\n+        code, out = run(\"list\", \"--json\")\n+        self.assertEqual(code, 0)\n+        with open(\"items.json\", encoding=\"utf-8\") as handle:\n+            self.assertEqual(json.loads(out), json.load(handle))\n+\n \n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

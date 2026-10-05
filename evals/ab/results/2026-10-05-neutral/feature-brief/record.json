@@ -1,0 +1,67 @@
+{
+  "case": "feature",
+  "condition": "brief",
+  "prompt": "Add a `--json` flag to `python inventory.py list` that prints the items as a JSON array in file order with the same fields. Keep the default text output exactly as it is, add no dependencies, keep the change local, and run the existing checks.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 19.3,
+    "session_id": "a127feca-11a3-42d5-ada9-17838f525191",
+    "cost_usd": 0.11249340000000001,
+    "turns": 12,
+    "usage": {
+      "input_tokens": 14,
+      "cache_creation_input_tokens": 15113,
+      "cache_read_input_tokens": 171667,
+      "output_tokens": 1768,
+      "output_tokens_details": {
+        "thinking_tokens": 30
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 15113,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 246,
+          "cache_read_input_tokens": 28650,
+          "cache_creation_input_tokens": 272,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 272
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`python inventory.py list --json` now prints the items as a JSON array in file order. It prints each item as it appears in `items.json`, so the fields are the same. The default text output is untouched. The existing checks pass.\n\nI ran `python -m unittest -v`, which runs both the original text-listing test and a new one. I did not run the CLI by hand with or without `--json`.\n\n- **`inventory.py`:** I added the `--json` flag to the `list` subcommand and updated the usage line in the docstring. It adds no dependencies and nothing else changed.\n- **`test_inventory.py`:** I added `test_json_listing`, which checks that the `--json` output parses to exactly the contents of `items.json`.\n\nThe output is compact JSON on one line, not indented.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 1,
+      "Edit": 4,
+      "Grep": 1,
+      "PowerShell": 2,
+      "Read": 3
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "inventory.py",
+    "test_inventory.py"
+  ],
+  "diff": "diff --git a/inventory.py b/inventory.py\nindex b6e69a5..a67df74 100644\n--- a/inventory.py\n+++ b/inventory.py\n@@ -1,4 +1,4 @@\n-\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH]\"\"\"\n+\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH] [--json]\"\"\"\n import argparse\n import json\n import sys\n@@ -21,9 +21,11 @@ def main(argv=None):\n     sub = parser.add_subparsers(dest=\"command\", required=True)\n     listing = sub.add_parser(\"list\", help=\"list items\")\n     listing.add_argument(\"--file\", default=\"items.json\")\n+    listing.add_argument(\"--json\", action=\"store_true\", help=\"print items as a JSON array\")\n     args = parser.parse_args(argv)\n     if args.command == \"list\":\n-        print(render(load(args.file)))\n+        items = load(args.file)\n+        print(json.dumps(items) if args.json else render(items))\n     return 0\n \n \ndiff --git a/test_inventory.py b/test_inventory.py\nindex f39cfbf..8233883 100644\n--- a/test_inventory.py\n+++ b/test_inventory.py\n@@ -1,5 +1,6 @@\n import contextlib\n import io\n+import json\n import unittest\n \n import inventory\n@@ -19,6 +20,12 @@ class ListTest(unittest.TestCase):\n         self.assertIn(\"Hex nut\", out)\n         self.assertIn(\"C-310\", out)\n \n+    def test_json_listing(self):\n+        code, out = run(\"list\", \"--json\")\n+        self.assertEqual(code, 0)\n+        with open(\"items.json\", encoding=\"utf-8\") as handle:\n+            self.assertEqual(json.loads(out), json.load(handle))\n+\n \n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

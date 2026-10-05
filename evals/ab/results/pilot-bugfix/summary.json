@@ -1,0 +1,35 @@
+[
+  {
+    "case": "bugfix",
+    "cond": "plain",
+    "cost": 0.081,
+    "skill": false,
+    "hidden": 0,
+    "outside": 2,
+    "files": 3,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "bugfix",
+    "cond": "brief",
+    "cost": 0.0933,
+    "skill": false,
+    "hidden": 0,
+    "outside": 2,
+    "files": 4,
+    "questions": 0,
+    "status": "success"
+  },
+  {
+    "case": "bugfix",
+    "cond": "skill",
+    "cost": 0.0788,
+    "skill": false,
+    "hidden": 0,
+    "outside": 2,
+    "files": 4,
+    "questions": 0,
+    "status": "success"
+  }
+]

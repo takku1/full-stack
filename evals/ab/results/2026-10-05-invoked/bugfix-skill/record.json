@@ -1,0 +1,67 @@
+{
+  "case": "bugfix",
+  "condition": "skill",
+  "prompt": "Fix `format_count(0)` returning an empty string. Return \"0\" for zero and preserve existing positive-count formatting. Keep this change local and run the existing checks.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 22.8,
+    "session_id": "63b1673e-4158-4e2f-97af-fb7baa73a61d",
+    "cost_usd": 0.16636779999999998,
+    "turns": 14,
+    "usage": {
+      "input_tokens": 22,
+      "cache_creation_input_tokens": 20365,
+      "cache_read_input_tokens": 332419,
+      "output_tokens": 1838,
+      "output_tokens_details": {
+        "thinking_tokens": 176
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 20365,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 305,
+          "cache_read_input_tokens": 34029,
+          "cache_creation_input_tokens": 145,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 145
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`format_count(0)` now returns `\"0\"`, and the existing tests pass along with a new zero test.\n\n**The fix:** in `counts.py`, the guard `if not n:` treated `0` as empty. I changed it to `if n is None:`. `None` still returns `\"\"` as before, and every positive-count path is untouched.\n\n**Test:** I added `test_zero` to `test_counts.py`.\n\n**Checks:** `python -m unittest -v` ran 4 tests, all OK, and was recorded through the run guard. The guard reported 2 files changed, both inside the write set, with no scope violations. The run is closed.\n\n**Ready/conditional/blocked:** this single fix was ready and is done. There was no work tracker, so nothing was registered and no design file was written.\n\n**Your call:** I kept `None` \u2192 `\"\"` because that was the existing behavior. If you'd rather `None` also return `\"0\"` or raise an error, that is a separate change.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 7,
+      "Edit": 2,
+      "Glob": 1,
+      "Grep": 1,
+      "Read": 2
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "counts.py",
+    "test_counts.py"
+  ],
+  "diff": "diff --git a/counts.py b/counts.py\nindex 7eb6ca2..93850d9 100644\n--- a/counts.py\n+++ b/counts.py\n@@ -3,7 +3,7 @@\n \n def format_count(n):\n     \"\"\"Format a non-negative count: 950, 1.2k, 3M.\"\"\"\n-    if not n:\n+    if n is None:\n         return \"\"\n     if n < 1000:\n         return str(n)\ndiff --git a/test_counts.py b/test_counts.py\nindex af0f385..5b9f2ba 100644\n--- a/test_counts.py\n+++ b/test_counts.py\n@@ -4,6 +4,9 @@ from counts import format_count\n \n \n class FormatCountTest(unittest.TestCase):\n+    def test_zero(self):\n+        self.assertEqual(format_count(0), \"0\")\n+\n     def test_small(self):\n         self.assertEqual(format_count(7), \"7\")\n         self.assertEqual(format_count(999), \"999\")\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

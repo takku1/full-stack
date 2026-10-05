@@ -1,0 +1,60 @@
+{
+  "case": "E06",
+  "condition": "plain",
+  "prompt": "Change the documented button label from Save to Save changes. No behavior or interface changes are needed. Explain the scope of the edit; do not create an architecture tree or perform research.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 7.8,
+    "session_id": "380784fb-c60d-446f-ad8c-c7215906dbc1",
+    "cost_usd": 0.0716804,
+    "turns": 4,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 12312,
+      "cache_read_input_tokens": 85082,
+      "output_tokens": 540,
+      "output_tokens_details": {
+        "thinking_tokens": 19
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12312,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 167,
+          "cache_read_input_tokens": 25860,
+          "cache_creation_input_tokens": 261,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 261
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "I changed line 1 of `docs/button-label.txt` from `Button label: Save` to `Button label: Save changes`.\n\n- **Scope:** This is the only place in the repo where the label appears. A case-insensitive search for \"Save\" found no other matches, including in the Markdown files.\n- **Not touched:** I made no code, UI or interface changes, and no changes to the skill, `ROADMAP.md` or the design docs. I did not check whether any code or UI uses this label. The task was limited to the documented label.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Edit": 1,
+      "Grep": 2
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "docs/button-label.txt"
+  ],
+  "diff": "diff --git a/docs/button-label.txt b/docs/button-label.txt\nindex 0057174..9b36e70 100644\n--- a/docs/button-label.txt\n+++ b/docs/button-label.txt\n@@ -1 +1 @@\n-Button label: Save\n+Button label: Save changes\n"
+}

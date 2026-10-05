@@ -1,0 +1,105 @@
+{
+  "case": "E04",
+  "condition": "plain",
+  "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 28.3,
+    "session_id": "b1261762-6e4b-421f-97fc-a83b2f4fb13d",
+    "cost_usd": 0.081582,
+    "turns": 2,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 12018,
+      "cache_read_input_tokens": 33610,
+      "output_tokens": 2678,
+      "output_tokens_details": {
+        "thinking_tokens": 671
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12018,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2466,
+          "cache_read_input_tokens": 19801,
+          "cache_creation_input_tokens": 6026,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 6026
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "I only designed this, and nothing was verified or built. The repo contains only `.gitignore`, so I had no existing source or docs to check. I also treated the image-source and rendering contracts as given and don't restate them. The design depends on them only through the two seams marked below.\n\n## Design\n\n**Shape.** Loading is a four-stage pipeline with a decoder port in the middle:\n\n`ImageSource (settled) \u2192 Sniff \u2192 ThumbnailDecoder (our port) \u2192 Downscale \u2192 ThumbnailCache \u2192 Renderer (settled)`\n\n**1. Decoder port (our own trait).** The image library sits behind this trait and nothing else depends on it.\n- `probe(&[u8]) -> Result<ImageInfo, ThumbError>` reads the header only. It returns width, height and pixel format.\n- `decode(&[u8], target: Size, out: &mut [u8]) -> Result<Decoded, ThumbError>` writes into a caller-provided buffer.\n- The decoder never allocates the output itself. The loader owns every buffer, so the memory budget is enforced in one place.\n- The trait is also the test seam. A fake decoder lets the whole pipeline be tested without the real library.\n\n**2. Budget and admission (library-independent).**\n- Thumbnail size is a fixed set of target sizes. Pixel format is the one the renderer contract already specifies.\n- Before decoding, call `probe` and compute the worst-case cost as `src_w \u00d7 src_h \u00d7 bpp` plus scratch. Reject the image with `TooLarge` if it exceeds a configured cap. This guards against decompression bombs and is the main protection against out-of-memory.\n- A global thumbnail-memory budget (bytes) governs admission. Allocation uses a fallible path (`try_reserve`-style). On failure, evict from the cache and retry once, then return `OutOfMemory` and show a placeholder. It never panics or aborts.\n\n**3. Downscale (library-independent).** We own this step: box or area averaging, integer arithmetic only, with no floating-point dependency. If the decoder can only produce full-size output, the cap in step 2 bounds the peak. If it can scale during decode, the adapter uses that (see the conditional list).\n\n**4. Cache.** An LRU keyed by `(source id, source revision, target size)`, with a byte-budget cap. Entries are immutable and shared, so rendering never copies them. Failures are cached as negative entries, so a corrupt file isn't re-decoded on every repaint.\n\n**5. Scheduling.** Decoding is cooperative and must not block the render path.\n- The render path asks the cache and gets either a thumbnail or a placeholder.\n- A miss enqueues a request in a bounded, deduplicated queue. Requests are prioritised by visibility, and stale requests are cancelled on scroll.\n- One decode runs at a time by default. Concurrency is a later tuning option.\n- A completed decode invalidates only the affected region.\n\n**6. Errors.** `ThumbError` is `UnsupportedFormat | Corrupt | TooLarge | OutOfMemory | SourceError(_)`. Each maps to a placeholder variant.\n\n**7. Tests.** These need no real library:\n- A fake decoder gives pipeline tests for the cache, budget, cancellation and negative caching.\n- Property tests cover the downscaler.\n- Budget rejection is tested with fabricated headers.\n- Out-of-memory paths are tested with a failing allocator.\n\n## Conditional work (blocked on library documentation)\n\nNothing below is decided. Each item names what would settle it.\n\n| Item | Depends on | If it turns out otherwise |\n|---|---|---|\n| Choosing this library at all | Confirming it works in `no_std` | Pick another library, or write minimal decoders. The port is unchanged. |\n| The sniff table and supported-format list | Which formats it actually decodes | The table is data, so entries are added or removed. Unsupported formats return `UnsupportedFormat`. |\n| The decoder adapter | The library's real API shape: buffer-based or streaming, row callbacks, and so on | Only the adapter is rewritten. |\n| Whether `decode` can write into our buffer | Whether it accepts a caller-provided output | If not, the adapter allocates internally. Then budget accounting must wrap the allocator or use a bounded arena. |\n| Scratch size in the admission formula | Whether it reports required scratch up front or only allocates on demand | If it can't report this, use a conservative per-format estimate, enforced by a budgeting allocator. The estimate gets replaced once it is measured. |\n| Fallible allocation | Whether the library handles allocation failure or aborts | If it aborts, the library can't safely run under memory pressure. Use a fixed arena, a stricter cap, or a different library. |\n| Decode-time scaling | Whether it supports reduced-size decode | If yes, peak memory drops and step 2 gets cheaper. If not, the downscale stage handles it at higher peak cost. |\n| Global allocator requirement | Whether it needs `alloc` | This decides the platform's allocator setup, not the loader's design. |\n| Pixel-format conversion | Which output formats it produces | Add a conversion step to the renderer's format if they differ. |\n| Concrete numbers: caps, cache size, queue depth | Measurements on target hardware and real library behaviour | The defaults are placeholders, not recommendations. |\n\n**Not conditional (can start now):** the port trait, budget/admission logic, downscaler, cache, scheduler, error type, fake decoder and the tests above.\n\n**Smallest verification that unblocks the rest:** read the library's docs or source once. Check four facts: its `no_std` and `alloc` requirements, its supported formats, whether decode output goes to a caller buffer, and whether it can scale during decode. Then write only the adapter and the sniff table.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional.",
+  "turn2": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 7.5,
+    "session_id": "b1261762-6e4b-421f-97fc-a83b2f4fb13d",
+    "cost_usd": 0.1068574,
+    "turns": 1,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 3409,
+      "cache_read_input_tokens": 25827,
+      "output_tokens": 647,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 3409,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 647,
+          "cache_read_input_tokens": 25827,
+          "cache_creation_input_tokens": 3409,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 3409
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Understood. I won't commit to the library, so the library-specific work stays conditional and nothing depends on it. I made no changes and ran no tools this turn.\n\n**Independent work, safe to build now.** None of it needs facts about the library:\n- The `ThumbnailDecoder` port trait, with `probe` and `decode` into a caller-owned buffer.\n- Budget and admission logic, based on header dimensions and a configured cap.\n- The integer-only downscaler.\n- The LRU cache with negative entries.\n- The bounded, deduplicated, cancellable scheduler.\n- `ThumbError` and its placeholder mapping.\n- A fake decoder and the tests that use it.\n\n**Conditional work, blocked until the library's documentation is available.** Do not start it and do not assume any answer:\n- Choosing the library at all, which depends on `no_std` support.\n- The adapter that implements the port.\n- The sniff table and supported-format list.\n- Whether decode can write into our buffer.\n- Scratch-size reporting for the admission formula.\n- Fallible-allocation behaviour.\n- Decode-time scaling.\n- The `alloc` and global-allocator requirement.\n- Pixel-format conversion.\n- Real values for the caps, cache size and queue depth.\n\n**Rules while it stays conditional:**\n- No dependency is added to the manifest.\n- No code or doc states a supported format, allocation behaviour or API shape for the library.\n- The sniff table starts empty. Until the adapter exists, every format returns `UnsupportedFormat`.\n- The default caps are labelled placeholders.\n\n**What lifts the condition.** Once someone with the library's documentation confirms the four facts below, only the adapter and the sniff table need to be written:\n- its `no_std` and `alloc` requirements\n- its supported formats\n- whether output goes to a caller buffer\n- whether it can scale during decode\n\nIf any of those fail, the port stays as designed and a different decoder goes behind it.",
+    "skill_invoked": false,
+    "tool_counts": {},
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

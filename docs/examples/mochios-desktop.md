@@ -4,7 +4,7 @@ This is a worked design example for Full Stack, not an approved MochiOS architec
 
 ## Observed source material
 
-On 2026-09-09, the repository HEAD read `e3c0da6b6bb7b03bddf3015d9f7ad238c9dc21b8`. This does not imply a clean working tree or runtime validation.
+On 2026-09-09, the repository HEAD read `e3c0da6b6bb7b03bddf3015d9f7ad238c9dc21b8`. This does not imply a clean working tree or runtime validation. MochiOS is a private repository, so the source links below resolve only in a development workspace with a sibling `MochiOS` checkout; the table records what each showed.
 
 | Source | What inspection establishes | What it does not establish |
 |---|---|---|

@@ -1,0 +1,32 @@
+{
+  "bugfix": {
+    "X": "skill",
+    "Y": "brief",
+    "Z": "plain"
+  },
+  "crosscut": {
+    "X": "skill",
+    "Y": "brief",
+    "Z": "plain"
+  },
+  "E02n": {
+    "X": "plain",
+    "Y": "skill",
+    "Z": "brief"
+  },
+  "E04": {
+    "X": "skill",
+    "Y": "brief",
+    "Z": "plain"
+  },
+  "E06": {
+    "X": "plain",
+    "Y": "brief",
+    "Z": "skill"
+  },
+  "feature": {
+    "X": "plain",
+    "Y": "skill",
+    "Z": "brief"
+  }
+}

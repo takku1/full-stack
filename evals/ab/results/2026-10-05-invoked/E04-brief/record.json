@@ -1,0 +1,105 @@
+{
+  "case": "E04",
+  "condition": "brief",
+  "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 24.0,
+    "session_id": "27c8d1a4-38ec-478e-80e0-f9d30827a4a2",
+    "cost_usd": 0.080122,
+    "turns": 2,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 12573,
+      "cache_read_input_tokens": 34210,
+      "output_tokens": 2298,
+      "output_tokens_details": {
+        "thinking_tokens": 189
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12573,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2144,
+          "cache_read_input_tokens": 20401,
+          "cache_creation_input_tokens": 5981,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 5981
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "# Image-thumbnail loading design for a no_std Rust desktop\n\n**Workspace check:** the workspace contains only the skill file (`SKILL.md`), with no Rust code, `Cargo.toml` or contract definitions. I therefore have no interface or path names to cite. I refer to the settled image-source and rendering contracts only by role and invent no signatures. Nothing here was built or run.\n\n## Outcome\nGiven a thumbnail request, take encoded bytes from the image source, decode them, scale them to the thumbnail size, and hand the pixels to the renderer. A bad image shows a placeholder and never takes down the desktop.\n\n**Excluded:**\n- Changes to the source or rendering contracts.\n- A full-size image viewer.\n- Persistent thumbnail caching.\n- Choosing or verifying the library's formats or allocation behavior.\n\n## Ownership and contracts\n| State | Owner |\n|---|---|\n| Encoded bytes | Image source, which is settled. The loader borrows them for one decode and does not retain them. |\n| Decode and scale scratch memory | Loader, from a fixed-capacity arena sized at build time. |\n| Finished thumbnail pixels | Loader's bounded slot table until the renderer takes them. Slot state is `Empty`, `Pending`, `Ready` or `Failed(reason)`. |\n| Placeholder image | Static data in the binary. It needs no allocation, so it is always available. |\n\n**Internal seam (new, ours):** one small `ThumbDecoder` trait with a single operation. Given a byte slice, a target size and a scratch buffer, it returns pixels, or a typed error: `UnsupportedFormat`, `Corrupt`, `ScratchTooSmall` or `TooLarge`.\n- The proposed library goes only behind this trait.\n- Format support and allocation facts stay confined to one adapter.\n- Everything else in the design is independent of the library.\n\n## Choices\n1. **Bounded memory.**\n   - The loader works in a caller-provided or static arena with a hard per-decode cap.\n   - It does not assume a global allocator, because I can't verify whether the library needs one.\n   - Evidence: no_std has no allocator unless the platform supplies one. That the platform lacks one is an assumption to confirm.\n2. **Reject before decoding.**\n   - If the library exposes dimensions cheaply, check them against the cap first and return `TooLarge` rather than fail mid-decode. This is conditional on that API existing.\n   - Otherwise the adapter relies on `ScratchTooSmall`.\n3. **Failure and retry.**\n   - Each error maps to `Failed(reason)` and shows the placeholder.\n   - `Corrupt` and `UnsupportedFormat` are permanent for that source version and are not retried.\n   - Only a source-level transient error (from the settled contract) allows retry, with a bounded count and no busy loop.\n4. **Restart.** Nothing persists. After restart all slots are `Empty` and thumbnails are re-requested lazily, which is correct because there is no cache.\n5. **Concurrency.** One decode at a time on the existing execution model, with a slot-count cap. Eviction is oldest-`Ready` first, and a slot in use by the renderer is never evicted.\n6. **Cancellation.** If a request is dropped (for example, scrolled off screen) while `Pending`, the result is discarded and its scratch memory released.\n\n## Increments, in order, with checks\nIncrements 1\u20134 and 6 are unconditional. Increment 5 is the only work that depends on library facts.\n\n1. **Slot table and state machine.**\n   - Check: host-side unit tests for transitions, eviction, cancellation, and the \"never evict a slot in use\" rule.\n2. **`ThumbDecoder` trait, error type, and a fake decoder that returns fixed pixels.**\n   - Check: tests that every error maps to `Failed` plus the placeholder.\n   - The fake is only a test aid. It is not the shipped path.\n3. **Arena and scratch accounting.**\n   - Check: tests that exhaust the arena and confirm `ScratchTooSmall` is reported, with no panic and no leak across repeated failures.\n4. **Scaling.**\n   - This is our own box-filter downscale to the thumbnail size, which doesn't depend on the library.\n   - Check: golden-pixel tests on small synthetic buffers.\n5. **Library adapter. (CONDITIONAL)**\n   - Blocked until the library's documentation or source is available and verified. Until then, the following are unknown and must not be assumed:\n     - which formats it supports (this decides which `UnsupportedFormat` cases are real);\n     - whether it needs a heap, and its peak scratch size (this sets the arena size);\n     - whether it can read dimensions without a full decode (this decides the pre-check in choice 2);\n     - whether it is truly `no_std`, and its license and maintenance status.\n   - Check, once unblocked: decode real sample files per supported format, plus a corrupt file and an oversized file, on the target.\n   - If verification shows the library doesn't fit, only this adapter is replaced.\n6. **Wire into the settled source and renderer contracts.**\n   - Check: an end-to-end test on the target or an emulator that goes from source bytes to a rendered thumbnail.\n   - The adapter must be present for the real path, so the full end-to-end acceptance is conditional on increment 5. Until then it can run only against the fake.\n\n## Open blockers and decisions\n- **Blocker:** the library's documentation is unavailable (increment 5). Obtain it from the user, a vendored copy, or the source.\n- **Decide:** the per-decode memory cap and the thumbnail dimensions. Both are needed for arena sizing and are not derivable from the request. I'd propose the cap only after the library's peak scratch size is known.\n- **Confirm:** that the platform provides no global allocator, as assumed in choice 1.\n- **Optional, not built:** a persistent thumbnail cache, and a progressive or low-resolution-first decode.\n\n**Status:** this is a design only. No checks were run because there is no code to run them against.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Glob": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional.",
+  "turn2": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 7.6,
+    "session_id": "27c8d1a4-38ec-478e-80e0-f9d30827a4a2",
+    "cost_usd": 0.1031704,
+    "turns": 1,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 3087,
+      "cache_read_input_tokens": 26382,
+      "output_tokens": 542,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 3087,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 542,
+          "cache_read_input_tokens": 26382,
+          "cache_creation_input_tokens": 3087,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 3087
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Understood. I won't pursue or adopt the library, and I'm making no further tool calls to look for its facts.\n\n**Decision:** nothing in the design depends on the library being a fit. Only increment 5 and the end-to-end acceptance check that needs it stay conditional.\n\n**Proceed now (library-independent):**\n1. Slot table and state machine.\n2. `ThumbDecoder` trait, error type and a test-only fake decoder.\n3. Arena and scratch accounting.\n4. Our own scaling.\n6. Wiring to the settled source and renderer contracts, run against the fake only.\n\n**Conditional (increment 5 and its dependents):**\n- The library adapter is not started and no adopt-or-reject decision is made.\n- The following stay unknown, and I'm assuming none of them:\n  - supported formats;\n  - heap need and peak scratch size;\n  - whether dimensions can be read without a full decode;\n  - `no_std` status, license and maintenance.\n- Three items inherit this condition:\n  - The final arena size and per-decode cap.\n  - The pre-decode `TooLarge` check. Without it, `ScratchTooSmall` is the only guard.\n  - The end-to-end acceptance on real image files. Until the adapter exists, the end-to-end check runs only against the fake.\n- **Unblock condition:** verified documentation or source for the library, supplied by the user. At that point only the adapter is built, or replaced if the library doesn't fit.\n\n**Open:** I still need your thumbnail dimensions, and I'll need to confirm there is no global allocator. Neither depends on the library.\n\nThis is still design only. Nothing was built or run.",
+    "skill_invoked": false,
+    "tool_counts": {},
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

@@ -1,0 +1,5 @@
+[
+  {"sku": "A-100", "name": "Bolt", "qty": 120},
+  {"sku": "B-220", "name": "Hex nut", "qty": 75},
+  {"sku": "C-310", "name": "Washer", "qty": 0}
+]

@@ -1,0 +1,61 @@
+{
+  "case": "E06",
+  "condition": "brief",
+  "prompt": "Change the documented button label from Save to Save changes. No behavior or interface changes are needed. Explain the scope of the edit; do not create an architecture tree or perform research.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 10.2,
+    "session_id": "7ff0e960-2d0c-40fe-8a42-a03c6a83fe77",
+    "cost_usd": 0.0751984,
+    "turns": 4,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 12909,
+      "cache_read_input_tokens": 86832,
+      "output_tokens": 618,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12909,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 215,
+          "cache_read_input_tokens": 26442,
+          "cache_creation_input_tokens": 276,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 276
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "I changed the documented button label from `Save` to `Save changes` in `docs/button-label.txt`, line 1. It was a one-line edit.\n\n- **Included:** the label text in that one doc file.\n- **Excluded:** behavior, interfaces, and any code. No architecture tree or research was needed.\n- **Check:** I searched the working tree for other uses of the word \"Save\" (skipping `.claude/`). The only match was this file, so nothing else documents the label. I didn't re-run the search after the edit, and there are no tests or build steps for a text doc.\n- **Unfinished:** nothing. The repo has no UI code, so no button in code uses the label.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Edit": 1,
+      "Grep": 1,
+      "Read": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "docs/button-label.txt"
+  ],
+  "diff": "diff --git a/docs/button-label.txt b/docs/button-label.txt\nindex 0057174..9b36e70 100644\n--- a/docs/button-label.txt\n+++ b/docs/button-label.txt\n@@ -1 +1 @@\n-Button label: Save\n+Button label: Save changes\n"
+}

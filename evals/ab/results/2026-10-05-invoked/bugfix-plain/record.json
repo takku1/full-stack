@@ -1,0 +1,66 @@
+{
+  "case": "bugfix",
+  "condition": "plain",
+  "prompt": "Fix `format_count(0)` returning an empty string. Return \"0\" for zero and preserve existing positive-count formatting. Keep this change local and run the existing checks.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 12.6,
+    "session_id": "a504b3d1-8fad-4881-9970-7c188b55f8dc",
+    "cost_usd": 0.0649704,
+    "turns": 6,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 10366,
+      "cache_read_input_tokens": 80152,
+      "output_tokens": 746,
+      "output_tokens_details": {
+        "thinking_tokens": 94
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 10366,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 169,
+          "cache_read_input_tokens": 23519,
+          "cache_creation_input_tokens": 656,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 656
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`format_count(0)` now returns `\"0\"`. The fix is a two-line change in `counts.py`: an `if n == 0: return \"0\"` check ahead of the old `if not n:` check. The three existing tests in `test_counts.py` pass.\n\nI kept the old `if not n:` check, so `None` still returns `\"\"`, as it did before, and positive counts format as before. I didn't add a test for the zero case. `test_counts.py` has no zero test, which is how the bug went unnoticed. I can add one if you want.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 1,
+      "Edit": 1,
+      "Glob": 1,
+      "Grep": 1,
+      "Read": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "counts.py"
+  ],
+  "diff": "diff --git a/counts.py b/counts.py\nindex 7eb6ca2..32e1f5e 100644\n--- a/counts.py\n+++ b/counts.py\n@@ -3,6 +3,8 @@\n \n def format_count(n):\n     \"\"\"Format a non-negative count: 950, 1.2k, 3M.\"\"\"\n+    if n == 0:\n+        return \"0\"\n     if not n:\n         return \"\"\n     if n < 1000:\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

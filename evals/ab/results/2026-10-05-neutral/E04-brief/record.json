@@ -1,0 +1,106 @@
+{
+  "case": "E04",
+  "condition": "brief",
+  "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 22.1,
+    "session_id": "3b63f1be-3941-46b0-86fa-8f0e3604cf17",
+    "cost_usd": 0.085674,
+    "turns": 4,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 13189,
+      "cache_read_input_tokens": 60430,
+      "output_tokens": 2082,
+      "output_tokens_details": {
+        "thinking_tokens": 171
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 13189,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1686,
+          "cache_read_input_tokens": 26781,
+          "cache_creation_input_tokens": 217,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 217
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "The working directory has no Rust code, no manifest, and no contract documents. Only the skill file exists. So I can't cite the \"settled\" image-source and rendering contracts, and I haven't invented them. Where the design depends on them, it uses placeholders (`Source`, `Surface`) that you or the contract owners need to bind.\n\n## Outcome\nA desktop component loads images as thumbnails and hands them to the renderer as pixel buffers of a bounded size. It works under `no_std` with `alloc`, if `alloc` is available (see Blockers).\n\n**Excluded:**\n- Changing the source or rendering contracts.\n- Full-size image viewing.\n- Any claim about the image library's formats, features, or allocation behavior.\n\n## Ownership and state\n| State | Owner |\n|---|---|\n| Encoded bytes | The image source (settled). The loader borrows them and never retains them past decode. |\n| Decoded thumbnail pixels | The thumbnail cache. The renderer reads them through the settled contract. |\n| Cache entries (key \u2192 `Loading`, `Ready`, or `Failed(reason)`) | The thumbnail cache, with a fixed byte budget and LRU eviction. |\n| Decoder state | Short-lived and owned by the loader. It is dropped after each decode. |\n\nThe decoder sits behind a trait I'm calling `ThumbDecoder` (name not final):\n\n```rust\ntrait ThumbDecoder {\n    fn decode(&mut self, src: &[u8], max_edge: u32, out: &mut PixelBuf)\n        -> Result<ThumbMeta, DecodeError>;\n}\n```\n\nThe rest of the design depends only on this trait. The proposed library becomes one implementation of it.\n\n## Choices\n1. **Hide the library behind `ThumbDecoder`.**\n   - Nothing about the library is verified, so this keeps its facts out of the cache, scheduling, and failure logic.\n   - A different library, or a stub, can replace it without touching those parts.\n2. **Fixed memory budget.**\n   - The cache has a hard byte cap, and a single thumbnail has a maximum pixel size (`max_edge\u00b2 \u00d7 bytes per pixel`).\n   - A decode that would exceed the cap fails with `TooLarge` rather than allocating.\n   - I would set `max_edge` and the cap from the rendering contract, which I can't see.\n3. **Load one image at a time, off the render path.**\n   - Requests are queued and deduplicated by key.\n   - The renderer sees `Loading` and shows a placeholder.\n4. **Failure and restart behavior.**\n   - Unsupported format, corrupt data, and out-of-memory all become `Failed(reason)`.\n   - A `Failed` entry is not retried automatically. A retry happens only if the source reports changed bytes.\n   - Retry rules for transient source errors belong to the source contract, so I defer to it.\n   - The cache is in memory only, so a restart starts empty and reloads on demand. Persisting thumbnails to disk is out of scope.\n\n## Ordered increments\n1. **Cache and queue with a fake decoder.**\n   - Includes the byte budget, LRU eviction, dedupe, and the state machine.\n   - Check: host-side unit tests for eviction under the cap, dedupe, `Failed` not retried, and no growth past the cap.\n   - Not conditional.\n2. **Wire to the settled source and rendering contracts.** *(conditional on binding the contracts, since I can't see them)*\n   - Check: an end-to-end test that goes from fake bytes to a pixel buffer the renderer accepts.\n3. **`ThumbDecoder` implementation for the proposed library.** *(conditional, see below)*\n   - Check: decode fixtures in each supported format, plus a corrupt file and an oversized file, on the real target.\n\n## Conditional work\nEverything in increment 3, and these decisions, wait on facts I couldn't verify:\n- **Supported formats:** which formats go in the user-facing list, and the `UnsupportedFormat` mapping.\n- **Allocation:** whether the library can decode under `no_std`, needs `alloc`, accepts a caller-supplied buffer, or can bound its allocations. This decides whether the memory cap in choice 2 is enforceable inside the decoder or only checked before and after a decode.\n- **Downscaling:** whether the library can decode directly at reduced size. If it can't, the full-size decode peak can exceed the cap, and the design needs a header-only size check first.\n- **Library selection:** whether the library is acceptable at all. If it can't meet the allocation requirements, replace it. The design above doesn't change.\n\n## Blockers\n- The source and rendering contracts aren't in this directory, and I need them for increment 2 and for `max_edge`.\n- I need confirmation of whether the target has a global allocator. If it doesn't, the design needs caller-provided fixed buffers, which changes the cache.\n- The library's documentation or source needs to be made available, or someone who has read it needs to confirm the facts above.\n\nI ran no checks, since there is no code yet.",
+    "skill_invoked": true,
+    "tool_counts": {
+      "Glob": 1,
+      "Skill": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional.",
+  "turn2": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 9.7,
+    "session_id": "3b63f1be-3941-46b0-86fa-8f0e3604cf17",
+    "cost_usd": 0.1096036,
+    "turns": 1,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 2629,
+      "cache_read_input_tokens": 26998,
+      "output_tokens": 801,
+      "output_tokens_details": {
+        "thinking_tokens": 54
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 2629,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 801,
+          "cache_read_input_tokens": 26998,
+          "cache_creation_input_tokens": 2629,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2629
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Understood. I'm not committing to the library or building any library-specific work. That work stays conditional and unscheduled.\n\n## Committed scope (independent of the library)\n1. **Thumbnail cache and load queue.**\n   - It has a fixed byte budget, LRU eviction, key-based dedupe, and the `Loading`, `Ready`, and `Failed(reason)` states.\n   - It is tested against a fake decoder.\n   - Checks: host-side unit tests for eviction under the cap, dedupe, `Failed` not being retried automatically, and no growth past the budget.\n2. **A `ThumbDecoder` trait boundary.**\n   - The trait is as sketched earlier. Only a fake implementation is built now, and nothing in the design names the library.\n   - The fake covers success, corrupt data, `TooLarge`, and `Unsupported`, so the failure paths are exercised without the library.\n\n## Conditional (not pursued, not scheduled)\nWork in this group needs facts about the library that I can't verify. It starts only if someone supplies those facts and chooses to adopt the library.\n- **A real `ThumbDecoder` implementation.**\n  - It needs the library's supported formats, its `no_std` and `alloc` requirements, and whether it takes caller-supplied buffers.\n  - It also needs to know whether the library can decode at reduced size, and the cap enforcement depends on that. Without reduced-size decode, the decode peak can exceed the budget unless there is a header-size pre-check.\n- **The user-facing list of supported formats.**\n- **Wiring the contracts to a real decode.**\n  - The end-to-end path with a real decode is conditional.\n  - The settled source and rendering contracts are not in this directory, so binding them to the cache is also blocked on their text, not only on the library.\n- **The `max_edge` and cache budget values.** I can't set them without the rendering contract. Treat them as parameters until it's available.\n\nI haven't recommended replacing the library either, because that would be another decision made without evidence.\n\n## Blockers\n- The source and rendering contract text.\n- Whether the target has a global allocator. If not, the cache design changes to caller-provided fixed buffers, and committed item 1 would need rework.\n\nI ran no checks, since no code exists yet.",
+    "skill_invoked": false,
+    "tool_counts": {},
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

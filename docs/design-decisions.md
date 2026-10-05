@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions record the initial 0.1.0 design and the 0.2.0 extension in D-011/D-012. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, and package 0.3.0 in D-015/D-016. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 
@@ -12,11 +12,11 @@ Alternative: rewrite Recurspec as the sole entry point. Rejected for this initia
 
 Use requirements, scenarios, components, interfaces, authority, refinement, and traceability. Define overloaded terms and distinguish product, architecture, runtime, resource, and work views. Preserve a subject project's language through mappings rather than forced renaming.
 
-Alternative: reuse all Recurspec domain terms as the sole vocabulary. Its [CONTEXT.md](../../recurspec/CONTEXT.md) reserves Contract Node and Atomic Leaf for specific workflow concepts; extending those names to every UI concept or work package would blur their meaning. Full Stack keeps them only when integrating with that workflow.
+Alternative: reuse all Recurspec domain terms as the sole vocabulary. Its [CONTEXT.md](https://github.com/takku1/recurspec/blob/8374c2bd1d373766ca7e66293dee44698d541612/CONTEXT.md) reserves Contract Node and Atomic Leaf for specific workflow concepts; extending those names to every UI concept or work package would blur their meaning. Full Stack keeps them only when integrating with that workflow.
 
 ## D-003: Treat decomposition as an iterative design decision
 
-Recurspec's [design reference](../../recurspec/src/recurspec/skill/references/design.md) already covers raw goals, technology research, vertical/horizontal coverage, and decomposition guards. This is an important existing capability, not an absent feature being invented here.
+Recurspec's [design reference](https://github.com/takku1/recurspec/blob/8374c2bd1d373766ca7e66293dee44698d541612/src/recurspec/skill/references/design.md) already covers raw goals, technology research, vertical/horizontal coverage, and decomposition guards. This is an important existing capability, not an absent feature being invented here.
 
 Full Stack changes the ordering: sketch responsibilities, investigate consequential reuse choices, and revise requirements and boundaries together. Resolve expensive custom commitments before detailed decomposition, while permitting preliminary decomposition needed to understand what to research. Reject both automatic build-first expansion and mandatory procurement research before any conceptual analysis.
 
@@ -40,7 +40,7 @@ Recurspec's bounded leaves and depth guards are useful within its workflow. Full
 
 ## D-007: Import ownership discipline selectively
 
-Architectural Reasoning's [subsystem template](../../archetect/skills/architectural-reasoning/references/subsystem-specification.md) covers state authority, interfaces, resource/concurrency semantics, failure, observability, performance, and migration. Full Stack adapts this depth where the selected scope needs it.
+Architectural Reasoning's [subsystem template](https://github.com/takku1/architectural-reasoning/blob/1e96a46360515db8774ba872d1d891e8209860ab/references/subsystem-specification.md) covers state authority, interfaces, resource/concurrency semantics, failure, observability, performance, and migration. Full Stack adapts this depth where the selected scope needs it.
 
 Its primary-lens/counter-lens technique becomes a concise challenge to consequential boundary decisions. It does not require mechanically applying every lens or writing every template section. Logical, source, process, protection, and deployment boundaries remain distinct.
 
@@ -84,8 +84,37 @@ First live use of the logic entrypoint (MochiOS performance fix, [field report](
 
 Alternative: leave the flows as piloted and carry the friction as runner judgment. Rejected because each point forced a mid-run decision the skill should have made; the fixes are branch conditions and invariants, not new features. One observation (the `apply` verb carrying description rather than control) belongs to SkillWren rather than this skill and is recorded as a format-level finding, not applied here.
 
+## D-015: Fresh-user review and second field report (package 0.3.0)
+
+The [fresh-user review](research/review-2026-10-05-fresh-user.md) (verdict NOT-YET) and the [second field report](research/field-report-2026-10-03-mochios-2.md) found that the logic entrypoint left authorization, filing, ordering, and notation underspecified. The SkillWren format stays (D-013); the flows and appendix change:
+
+- **Declined commitments.** Each answer to the costly-commitment question has a defined result: authorized work is ready; declined work is marked conditional and filed; dismissal writes nothing. Every design lists work as ready, conditional, or blocked, and `implement` builds only ready work (`never: build conditional or blocked work`). This supersedes the [0.2.0 review](research/improvement-review.md)'s rejection of an approval gate: the gate covers only costly-to-reverse commitments, and the review's concern (no branded decision classes, no approval for ordinary choices) still holds.
+- **Plain-language step meanings.** The appendix defines every `apply` step, the control words, and which header fields hosts actually read. `version` remains the SkillWren format; the package release is stated in the README.
+- **Filing.** Subject instructions take precedence over package defaults. A design extends the existing component note, else the documented location, else one `docs/design/<outcome-slug>.md`; it stays in chat when asked, when no repository is known, or when the subject forbids new design files. The standalone reference no longer suggests creating a roadmap.
+- **Ordering.** Registry identity resolves during grounding (Recurspec `ROADMAP.md` first). Routine edits ground and read entries before updating, and registry updates are idempotent. Scope splits happen before the design is generated. Implementation writes edits before running checks, repairs, then records evidence.
+- **Accepted designs.** `implement` accepts a `design` input and rechecks its facts instead of rerunning design and re-asking settled questions.
+- **Readiness.** The gate checks the same five sections the appendix describes, matched to the selected scope; routine notes are a separate shape. A repeated identical failure becomes a recorded blocker instead of a loop.
+- **Concurrency.** Uncommitted edits made outside the run and processes holding build/run resources are left alone, with a stated recovery: edit around, ask, or wait.
+- **Recurspec evidence.** Owning-node evidence updates are proposed in the completion report, not applied.
+- **Discovery.** The description excludes isolated routine edits and names cross-component changes.
+
+- **Host-parseable header.** An unquoted `Enum[...]` in an inline map is valid in the SkillWren profile but not YAML; Claude Code then showed the H1 as the description. The value is quoted, and the artifact checker parses the header with PyYAML. Reported upstream as SkillWren BF-1.
+
+The entrypoint grows from about 2,560 to about 3,500 approximate tokens, mostly for the step glossary. Alternative: convert back to numbered prose. Rejected for now because D-013's structure checks still catch binding, effect, and ask-before-write errors; revisit if the FS-009 comparison shows the notation costs more than it prevents.
+
+Installers now preview, back up changed installs outside the skills folders, stage before replacing, and roll back on failure; `install.sh` covers macOS/Linux (exercised under Git Bash only). The artifact checker reports sibling-checkout links as optional workspace links rather than package errors.
+
+## D-016: Mechanical run guard, parallel write sets, and an A/B harness
+
+A follow-up critique of 0.3.0 raised four gaps: no enforcement story, effectiveness claims resting on non-comparative trials, a larger entrypoint with no measured payoff, and concurrency guidance too thin for parallel workers.
+
+- **Enforcement.** `scripts/run_guard.py` makes the implement flow's scope and evidence claims checkable in git repositories. A worker claims a write set (refused if it overlaps uncommitted edits made outside the run, or another open run, including runs in other worktrees). Checks run through the guard so their exit codes are recorded. `check` flags changes outside the write set or to edits that predate the run. The completion report pastes the guard's report. The README states which guarantees are mechanical and which remain instructions. Alternative: rely on host hooks. Rejected as the default because hooks are per-user host configuration that a portable skill cannot install; a hook can still call the guard.
+- **Parallel work.** Work packages carry a write set; parallel packages must be disjoint, and shared files (manifests, lockfiles, registries, generated code) have one owning package that integrates last and reruns the full checks.
+- **Cost.** The appendix dropped text that repeats references the flows already load. The entrypoint is about 3,400 approximate tokens including the new enforcement section, down from about 3,500. A separate "lite" profile was rejected: each session starts fresh, so there is no "practiced runner" for whom the step glossary is redundant.
+- **Evidence.** `evals/ab/run_ab.py` runs FS-009's five paired cases in isolated profiles with hidden acceptance checks and a blind grading packet. It closes no evidence gap until it has been run and graded.
+
 ## Inspected predecessor baseline (0.1.0)
 
-Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its repository had no resolvable HEAD during inspection. These identify inspected baselines, not a claim that either working tree was clean.
+Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its local checkout had no resolvable HEAD during inspection, and the public repository's only 1.3.0 state before that date is `1e96a46360515db8774ba872d1d891e8209860ab`, which the links above pin. These identify inspected baselines, not a claim that either working tree was clean.
 
 Relevant files: Recurspec `README.md`, `CONTEXT.md`, bundled `SKILL.md`, `references/design.md`, and `references/resolve.md`; Architectural Reasoning `SKILL.md`, `references/subsystem-specification.md`, and `references/architectural-philosophies.md`. Instructions are adapted selectively; the portable package retains [upstream notices](../skill/full-stack/NOTICE.md).

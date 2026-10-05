@@ -1,0 +1,349 @@
+{
+  "bugfix": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention_bounded_change": "met",
+            "acceptance_coverage": "met",
+            "preserves_existing_behavior": "met",
+            "honest_execution_evidence": "partly",
+            "effort_appropriate": "partly",
+            "continuation_status": "met"
+          },
+          "high_impact": [],
+          "score": 7
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention_bounded_change": "met",
+            "acceptance_coverage": "met",
+            "preserves_existing_behavior": "met",
+            "honest_execution_evidence": "met",
+            "effort_appropriate": "met",
+            "continuation_status": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention_bounded_change": "met",
+            "acceptance_coverage": "partly",
+            "preserves_existing_behavior": "met",
+            "honest_execution_evidence": "met",
+            "effort_appropriate": "met",
+            "continuation_status": "met"
+          },
+          "high_impact": [],
+          "score": 7
+        }
+      },
+      "ranking": [
+        "Y",
+        "X",
+        "Z"
+      ],
+      "could_infer_condition": "Partly. X clearly ran under a structured workflow/guard harness (it mentions a run guard, write set, work tracker, design file and a Ready/conditional/blocked heading). Y and Z read like ordinary unguided runs and can't be told apart by condition; Y is more thorough and Z more minimal."
+    },
+    "cost_usd": 0.2249622
+  },
+  "crosscut": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "build_intent_preserved": "met",
+            "acceptance_coverage": "met",
+            "real_integration_failures": "partly",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_evidence": "met",
+            "bounded_changes_continuation": "partly"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Y": {
+          "dimensions": {
+            "build_intent_preserved": "met",
+            "acceptance_coverage": "met",
+            "real_integration_failures": "met",
+            "state_ownership": "met",
+            "traceability": "partly",
+            "honest_evidence": "met",
+            "bounded_changes_continuation": "met"
+          },
+          "high_impact": [],
+          "score": 8.5
+        },
+        "Z": {
+          "dimensions": {
+            "build_intent_preserved": "met",
+            "acceptance_coverage": "met",
+            "real_integration_failures": "missed",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_evidence": "met",
+            "bounded_changes_continuation": "partly"
+          },
+          "high_impact": [],
+          "score": 7
+        }
+      },
+      "ranking": [
+        "Y",
+        "X",
+        "Z"
+      ],
+      "could_infer_condition": "Partly: X references run_guard.py and a write-set scope guard, suggesting a guarded/harnessed condition; Z reports shell-blocked commands and shares X's diff hash for __main__.py (likely same model, restricted tooling); Y shows no harness traces. Not confirmable."
+    },
+    "cost_usd": 0.28384620000000005
+  },
+  "E02n": {
+    "letters": {
+      "X": "plain",
+      "Y": "skill",
+      "Z": "brief"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "reuse_existing_cancellation": "partly",
+            "interface_end_to_end_coverage": "partly",
+            "uncertain_outcome_after_commit": "partly",
+            "no_invented_paths_or_interfaces": "partly",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "missed",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 6
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "reuse_existing_cancellation": "met",
+            "interface_end_to_end_coverage": "met",
+            "uncertain_outcome_after_commit": "met",
+            "no_invented_paths_or_interfaces": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "partly",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "correct_authority": "met",
+            "reuse_existing_cancellation": "met",
+            "interface_end_to_end_coverage": "met",
+            "uncertain_outcome_after_commit": "met",
+            "no_invented_paths_or_interfaces": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        }
+      },
+      "ranking": [
+        "Z",
+        "Y",
+        "X"
+      ],
+      "could_infer_condition": "Not reliably. Y has the most process-shaped structure (Filing/Disposition/Write set/registry/self-review labels), suggesting a scripted workflow or skill; Z is similar but less formulaic; X reads like an unscaffolded answer. All are design-only with no diff, so nothing separates them by execution."
+    },
+    "cost_usd": 0.2762292
+  },
+  "E04": {
+    "letters": {
+      "X": "skill",
+      "Y": "brief",
+      "Z": "plain"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "partly",
+            "independent_design_with_conditional_library": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "met",
+            "independent_design_with_conditional_library": "met",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8.5
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "partly",
+            "justified_prerequisites": "met",
+            "correct_authority": "met",
+            "interface_end_to_end_coverage": "met",
+            "independent_design_with_conditional_library": "partly",
+            "evidence_honesty": "met",
+            "usable_delivery_order": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [
+            "Initial answer labeled a library-dependent port shape (header probe, caller-buffer decode, scratch_bytes) as unconditional and used a JPEG DCT example implying format knowledge; corrected only after follow-up"
+          ],
+          "score": 7
+        }
+      },
+      "ranking": [
+        "Y",
+        "X",
+        "Z"
+      ],
+      "could_infer_condition": "Not reliably. X and Y both mention a workspace containing only skill files (suggesting a skill-guided workflow); Z mentions AGENTS.md and a placeholder commit, suggesting a different setup. This is circumstantial and does not establish how any response was generated."
+    },
+    "cost_usd": 0.35085259999999996
+  },
+  "E06": {
+    "letters": {
+      "X": "plain",
+      "Y": "brief",
+      "Z": "skill"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "scope_retention": "met",
+            "keep_change_local_no_arch_research": "met",
+            "evidence_honesty": "met",
+            "effort_appropriate": "met",
+            "usable_delivery": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        },
+        "Y": {
+          "dimensions": {
+            "scope_retention": "met",
+            "keep_change_local_no_arch_research": "met",
+            "evidence_honesty": "met",
+            "effort_appropriate": "met",
+            "usable_delivery": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        },
+        "Z": {
+          "dimensions": {
+            "scope_retention": "met",
+            "keep_change_local_no_arch_research": "met",
+            "evidence_honesty": "met",
+            "effort_appropriate": "partly",
+            "usable_delivery": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        }
+      },
+      "ranking": [
+        "Y",
+        "X",
+        "Z"
+      ],
+      "could_infer_condition": "Partly for Z: it names an available design workflow (registry entry, design file, run_guard.py) that it deliberately skipped, so it ran in a workflow-equipped setup. X and Y give no reliable signal; Y's '.claude/' exclusion (also in Z) hints at the same repo but not at the condition."
+    },
+    "cost_usd": 0.2693518
+  },
+  "feature": {
+    "letters": {
+      "X": "plain",
+      "Y": "skill",
+      "Z": "brief"
+    },
+    "grade": {
+      "responses": {
+        "X": {
+          "dimensions": {
+            "intent_preservation": "met",
+            "acceptance_coverage": "met",
+            "integration_and_failures": "partly",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "met",
+            "bounded_changes_and_continuation": "partly",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 8
+        },
+        "Y": {
+          "dimensions": {
+            "intent_preservation": "met",
+            "acceptance_coverage": "met",
+            "integration_and_failures": "met",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "met",
+            "bounded_changes_and_continuation": "partly",
+            "effort_appropriate": "partly"
+          },
+          "high_impact": [],
+          "score": 7
+        },
+        "Z": {
+          "dimensions": {
+            "intent_preservation": "met",
+            "acceptance_coverage": "met",
+            "integration_and_failures": "met",
+            "state_ownership": "met",
+            "traceability": "met",
+            "honest_execution_evidence": "met",
+            "bounded_changes_and_continuation": "met",
+            "effort_appropriate": "met"
+          },
+          "high_impact": [],
+          "score": 9
+        }
+      },
+      "ranking": [
+        "Z",
+        "X",
+        "Y"
+      ],
+      "could_infer_condition": "Partly. Y mentions skipping a design note/registry entry and not using run_guard.py, which suggests a workflow- or guard-equipped condition that it opted out of. X and Z have byte-identical test diffs and similar reports, so I couldn't tell their conditions apart. X and Y share the same CRLF incident, which suggests the same environment."
+    },
+    "cost_usd": 0.30169579999999996
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "case": "E02n",
+  "condition": "plain",
+  "prompt": "Design only roadmap B-17 from the supplied context. Keep the current stack and produce a concise implementation handoff. Research only if a decision cannot be resolved from the supplied contracts. Do not implement code.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 16.4,
+    "session_id": "d545d3bc-4d4b-4085-aa6d-7ea10d1d4625",
+    "cost_usd": 0.0739486,
+    "turns": 3,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 12474,
+      "cache_read_input_tokens": 33573,
+      "output_tokens": 1733,
+      "output_tokens_details": {
+        "thinking_tokens": 337
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12474,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1540,
+          "cache_read_input_tokens": 19764,
+          "cache_creation_input_tokens": 6519,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 6519
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "# B-17 implementation handoff: cancellation control and confirmed outcome\n\n**Scope:** Add a cancel control for a member's existing reservation. Show the outcome only after the server confirms it. B-18, B-19 and B-20 are out of scope. That means no waitlist promotion, no emails and no offline queueing. The stack is unchanged, and the server's `BookingService` cancellation is reused as is.\n\n## Stated contracts\n- The browser calls the authenticated API. The caller supplies a **reservation ID** and a **request ID**.\n- The server verifies access against the authenticated member. A client-supplied member ID can never authorize cancellation.\n- The server owns booking authority and persistence.\n\n## Design\n\n**1. Control**\n- Show a \"Cancel reservation\" button on each of the member's own active reservations.\n- Clicking it opens a confirm step that names the workshop and seat. Cancellation is destructive and likely hard to undo, because the seat may be taken.\n- Hide or disable the control for reservations that are already cancelled.\n\n**2. Request**\n- Send `{reservationId, requestId}` and nothing else.\n- Don't send a member ID, and don't use the UI's ownership check as authorization.\n- Generate the request ID once per user-confirmed attempt, and reuse the same ID on automatic or manual retries of that attempt. A new confirmation gets a new ID.\n- While the request is in flight, disable the control to prevent double submits, and show a pending state.\n\n**3. Outcome (server-confirmed only)**\n- Make no optimistic update. Change the reservation to \"Cancelled\" and show a confirmation message only when the server reports success.\n- Prefer re-reading reservation state from the server, or using the returned state, as the source for what's displayed.\n- Handle failures separately and accurately:\n\n| Case | UX |\n|---|---|\n| Not permitted or not found | \"Couldn't cancel this reservation.\" Refresh the list and don't reveal whether it belongs to someone else. |\n| Rejected by a business rule (e.g. a cutoff) | Show the server's reason, and leave the reservation active. |\n| Network error or timeout | Say the result is unknown. Offer retry with the same request ID, and refetch the reservation. Never claim success or failure. |\n| Already cancelled | Show it as cancelled, using the idempotency answer from the open questions. |\n\n**4. Accessibility and state**\n- Return focus sensibly after the dialog closes.\n- Announce the result through a live region.\n- Keep the control keyboard-operable.\n- Reset the UI state when the member navigates away mid-request, then refetch.\n\n## Open questions\nThe supplied context doesn't answer these. Resolve them by reading `BookingService` and the API handler. No external research is needed.\n1. What are the response shape and error codes for success, forbidden, not found and rule rejection?\n2. Is a repeated request ID idempotent, returning the original result? Is cancelling an already-cancelled reservation a success or an error?\n3. Is there a cancellation cutoff or other rule, and does the server expose it for the UI to show?\n4. Does the existing reservation list/read endpoint return enough state to render \"Cancelled\"?\n\nIf the contracts turn out to be missing, such as no idempotency or no read endpoint, record that as a new roadmap item. Don't expand B-17 to cover it.\n\n## Verification for the implementer\n- Component tests: confirm flow, pending state, each failure case, and no optimistic success.\n- A test that asserts the request payload contains no member ID.\n- A test that a retry reuses the request ID and a fresh confirmation gets a new one.\n- An integration check against the real API, using a second member's reservation ID, expecting rejection.\n- Update `ROADMAP.md` status for B-17 only when it's done.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Glob": 1,
+      "Grep": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

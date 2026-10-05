@@ -1,0 +1,60 @@
+{
+  "case": "E06",
+  "condition": "skill",
+  "prompt": "Change the documented button label from Save to Save changes. No behavior or interface changes are needed. Explain the scope of the edit; do not create an architecture tree or perform research.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 9.6,
+    "session_id": "7e9ee76d-dccb-41ea-963a-52cbbf57876e",
+    "cost_usd": 0.0837744,
+    "turns": 3,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 16128,
+      "cache_read_input_tokens": 67152,
+      "output_tokens": 582,
+      "output_tokens_details": {
+        "thinking_tokens": 21
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16128,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 249,
+          "cache_read_input_tokens": 29676,
+          "cache_creation_input_tokens": 261,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 261
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "The button label now reads \"Save changes\" in `docs/button-label.txt`. I changed that one line and nothing else.\n\n**Scope:** This is an isolated routine edit, so I skipped the full design flow. There is no architecture tree, no research, no registry entry, and no design file.\n- **Searched:** the repo for the word \"Save\", excluding `.claude/`. The only match was `docs/button-label.txt:1`.\n- **Not touched:** behavior, interfaces, and source code. I found no UI code, tests, or other docs that reference the label, so nothing else needed updating.\n\n**Verification:** I didn't run `run_guard.py`, so this edit is unguarded. I haven't re-run the search or checked `git diff`. The `Edit` call reported success.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Edit": 1,
+      "Grep": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "docs/button-label.txt"
+  ],
+  "diff": "diff --git a/docs/button-label.txt b/docs/button-label.txt\nindex 0057174..9b36e70 100644\n--- a/docs/button-label.txt\n+++ b/docs/button-label.txt\n@@ -1 +1 @@\n-Button label: Save\n+Button label: Save changes\n"
+}

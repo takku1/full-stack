@@ -1,0 +1,64 @@
+{
+  "case": "feature",
+  "condition": "plain",
+  "prompt": "Add a `--json` flag to `python inventory.py list` that prints the items as a JSON array in file order with the same fields. Keep the default text output exactly as it is, add no dependencies, keep the change local, and run the existing checks.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 13.6,
+    "session_id": "d6e7659b-b3aa-4903-80f6-8653aecf914f",
+    "cost_usd": 0.0810534,
+    "turns": 5,
+    "usage": {
+      "input_tokens": 8,
+      "cache_creation_input_tokens": 13538,
+      "cache_read_input_tokens": 86177,
+      "output_tokens": 965,
+      "output_tokens_details": {
+        "thinking_tokens": 33
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 13538,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 251,
+          "cache_read_input_tokens": 26498,
+          "cache_creation_input_tokens": 849,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 849
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "`python inventory.py list --json` now prints the items as a JSON array in file order, with every field exactly as it appears in the file. The existing text-listing test and a new JSON test both pass. A manual run of plain `list` printed the same table as before.\n\n- **Code change:** in `inventory.py`, `list` gets a `--json` flag, and the usage docstring mentions it. The JSON is indented two spaces.\n- **Test:** `test_json_listing` in `test_inventory.py` checks the JSON output equals the contents of `items.json`.\n- **Scope:** no new dependencies, and nothing else was touched.\n- **Empty list:** with `--json` it would print `[]` rather than the text output's \"no items\". I didn't test that case.\n\nI didn't commit anything.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 3,
+      "Glob": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "inventory.py",
+    "test_inventory.py"
+  ],
+  "diff": "diff --git a/inventory.py b/inventory.py\nindex b6e69a5..29df46d 100644\n--- a/inventory.py\n+++ b/inventory.py\n@@ -1,31 +1,33 @@\n-\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH]\"\"\"\n-import argparse\n-import json\n-import sys\n-\n-\n-def load(path):\n-    with open(path, encoding=\"utf-8\") as handle:\n-        return json.load(handle)\n-\n-\n-def render(items):\n-    if not items:\n-        return \"no items\"\n-    width = max(len(item[\"name\"]) for item in items)\n-    return \"\\n\".join(f\"{item['name']:<{width}}  {item['qty']:>4}  {item['sku']}\" for item in items)\n-\n-\n-def main(argv=None):\n-    parser = argparse.ArgumentParser(prog=\"inventory\")\n-    sub = parser.add_subparsers(dest=\"command\", required=True)\n-    listing = sub.add_parser(\"list\", help=\"list items\")\n-    listing.add_argument(\"--file\", default=\"items.json\")\n-    args = parser.parse_args(argv)\n-    if args.command == \"list\":\n-        print(render(load(args.file)))\n-    return 0\n-\n-\n-if __name__ == \"__main__\":\n-    sys.exit(main())\n+\"\"\"Tiny inventory CLI: python inventory.py list [--file PATH] [--json]\"\"\"\n+import argparse\n+import json\n+import sys\n+\n+\n+def load(path):\n+    with open(path, encoding=\"utf-8\") as handle:\n+        return json.load(handle)\n+\n+\n+def render(items):\n+    if not items:\n+        return \"no items\"\n+    width = max(len(item[\"name\"]) for item in items)\n+    return \"\\n\".join(f\"{item['name']:<{width}}  {item['qty']:>4}  {item['sku']}\" for item in items)\n+\n+\n+def main(argv=None):\n+    parser = argparse.ArgumentParser(prog=\"inventory\")\n+    sub = parser.add_subparsers(dest=\"command\", required=True)\n+    listing = sub.add_parser(\"list\", help=\"list items\")\n+    listing.add_argument(\"--file\", default=\"items.json\")\n+    listing.add_argument(\"--json\", action=\"store_true\", help=\"print items as a JSON array\")\n+    args = parser.parse_args(argv)\n+    if args.command == \"list\":\n+        items = load(args.file)\n+        print(json.dumps(items, indent=2) if args.json else render(items))\n+    return 0\n+\n+\n+if __name__ == \"__main__\":\n+    sys.exit(main())\ndiff --git a/test_inventory.py b/test_inventory.py\nindex f39cfbf..8526efc 100644\n--- a/test_inventory.py\n+++ b/test_inventory.py\n@@ -1,24 +1,31 @@\n-import contextlib\n-import io\n-import unittest\n-\n-import inventory\n-\n-\n-def run(*argv):\n-    out = io.StringIO()\n-    with contextlib.redirect_stdout(out):\n-        code = inventory.main(list(argv))\n-    return code, out.getvalue()\n-\n-\n-class ListTest(unittest.TestCase):\n-    def test_text_listing(self):\n-        code, out = run(\"list\")\n-        self.assertEqual(code, 0)\n-        self.assertIn(\"Hex nut\", out)\n-        self.assertIn(\"C-310\", out)\n-\n-\n-if __name__ == \"__main__\":\n-    unittest.main()\n+import contextlib\n+import io\n+import json\n+import unittest\n+\n+import inventory\n+\n+\n+def run(*argv):\n+    out = io.StringIO()\n+    with contextlib.redirect_stdout(out):\n+        code = inventory.main(list(argv))\n+    return code, out.getvalue()\n+\n+\n+class ListTest(unittest.TestCase):\n+    def test_text_listing(self):\n+        code, out = run(\"list\")\n+        self.assertEqual(code, 0)\n+        self.assertIn(\"Hex nut\", out)\n+        self.assertIn(\"C-310\", out)\n+\n+    def test_json_listing(self):\n+        code, out = run(\"list\", \"--json\")\n+        self.assertEqual(code, 0)\n+        with open(\"items.json\", encoding=\"utf-8\") as handle:\n+            self.assertEqual(json.loads(out), json.load(handle))\n+\n+\n+if __name__ == \"__main__\":\n+    unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

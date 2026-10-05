@@ -1,0 +1,105 @@
+{
+  "case": "E04",
+  "condition": "skill",
+  "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 30.3,
+    "session_id": "c6e59f77-dd15-41d1-a817-4a2e506d7684",
+    "cost_usd": 0.1023618,
+    "turns": 2,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 16172,
+      "cache_read_input_tokens": 37579,
+      "output_tokens": 3015,
+      "output_tokens_details": {
+        "thinking_tokens": 546
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 16172,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2860,
+          "cache_read_input_tokens": 23770,
+          "cache_creation_input_tokens": 6211,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 6211
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "# Design: image-thumbnail loading for a no_std Rust desktop\n\n**Grounding.** The working directory holds only the full-stack skill files. It has no Rust sources, no manifest, and no copy of the image-source or rendering contracts. I read no subject code and wrote no files. This design stays in chat, and I did not browse.\n\n**Assumptions.** If an assumption is false, the cost is the one given.\n- The image-source and rendering contracts exist as you describe, and I have not seen them. If either differs from what I use below, the loader's two edges must be re-matched. Only the edge adapters change.\n- The target has some memory strategy, either a global allocator or fixed buffers. I don't know which. If it has neither, the decode path needs a fixed-buffer design.\n\n## 1. Scope\n- **Outcome:** a thumbnail is produced from bytes supplied by the settled image source and handed to the settled rendering contract.\n- **Work IDs:**\n  - T1: decoder-neutral loader core\n  - T2: thumbnail budget policy\n  - T3: failure, cancel, retry\n  - T4: cache authority\n  - T5: library adapter\n  - T6: format support list\n  - T7: real-decode verification\n- **Exclusions:**\n  - Changing the image-source or rendering contracts.\n  - Choosing, vendoring, or installing the library.\n  - Full-size image display.\n  - Any claim about the library's formats or allocation needs.\n- **Deferred enhancements:** progressive loading, prefetching, and disk cache. They are not required now.\n\n## 2. Ownership and contracts\n| Concern | Authority | Notes |\n|---|---|---|\n| Source bytes | The settled image source | The loader consumes them and never redefines them. |\n| Pixel hand-off | The settled rendering contract | The loader emits what that contract accepts. |\n| Decode capability | A new `ThumbnailDecoder` seam owned by the loader | The seam is the only place a library appears. |\n| Memory budget | The loader's policy (T2) | The decoder must fit it. It cannot negotiate it. |\n| Thumbnail cache | The loader (T4) | The cache holds derived data only. The source stays authoritative. |\n\nTrigger-to-result flow:\n1. A thumbnail is requested for a source item.\n2. The loader checks the cache. On a hit it hands the thumbnail to rendering.\n3. On a miss it fetches bytes from the source and passes them with a budget to the decoder.\n4. It downsizes the result to the thumbnail size and stores it in the cache.\n5. It hands the thumbnail to rendering.\n\nFailure paths:\n- **Unsupported or corrupt data:** return a typed error and render a placeholder. The error is not cached as success.\n- **Over budget:** return a typed `OverBudget` error. Do not retry it automatically.\n- **Cancellation:** the caller can cancel before decode. In-flight decode finishes or aborts, and its result is discarded.\n- **Retry:** retry is allowed only for source fetch errors, with a bounded count.\n- **Recovery:** a failed item stays retryable on the next request.\n\nConsumer and provider matching:\n- The loader's input assumption is \"bytes plus an item identity\". That is unresolved until the source contract is read.\n- The loader's output assumption is \"a pixel buffer in the rendering contract's layout\". That is also unresolved until the rendering contract is read.\n- The library's guarantees are unknown, so they are an explicit unresolved condition.\n\n## 3. Choices\n- **Seam over direct coupling (chosen).** The seam lets T1\u2013T4 proceed without library facts. The cost is one indirection. Revisit it if the library turns out to need a different call shape.\n- **Alternatives for the decoder (open):**\n  - The proposed library.\n  - Per-format minimal decoders.\n  - A fixed-format-only decoder.\n  - There is no evidence to choose among them, so the choice is open.\n- **Fit gaps (all unverified):**\n  - supported formats\n  - whether it needs `alloc`\n  - peak memory per decode\n  - streaming or whole-buffer input\n  - `no_std` feature flags\n  - license\n- **Revisit condition:** when the library's documentation becomes available, or when you choose another decoder.\n\nChoosing and adopting the library is a costly-to-reverse commitment, and it is **not authorized**. I did not ask interactively because this session is non-interactive. Everything that depends on it is marked conditional below.\n\n## 4. Increments\n| ID | Work | Requirements and checks | Write set | Status |\n|---|---|---|---|---|\n| T1 | `ThumbnailDecoder` trait, loader core, and typed errors | Must compile `no_std`. Checks are unit tests against a fake decoder, which prove loader logic only and not working decoding. | New loader module, once the subject's layout is read | **Ready** |\n| T2 | Budget policy: maximum thumbnail dimensions and a byte ceiling | The numbers must come from the rendering contract and the target's memory. Check: tests for over-budget rejection. | The same module | **Ready** for the mechanism. The numeric values are conditional on target memory facts. |\n| T3 | Cancel, retry, and failure behavior | Check: tests for each failure path listed above. | The same module | **Ready** |\n| T4 | Cache with eviction bound | Check: hit, miss, and eviction tests. Whether it needs `alloc` depends on the target. | The same module | **Ready** if `alloc` is available. Otherwise it is conditional on a fixed-capacity design. |\n| T5 | Adapter implementing `ThumbnailDecoder` over the library | Needs the library's API, formats, and allocation behavior. | A separate adapter module and the manifest entry | **Conditional** on the adoption decision and on documentation access |\n| T6 | Format support list and its error mapping | Needs verified formats from the library's documentation. | Adapter and docs | **Conditional** |\n| T7 | Real-image decode checks on target | Needs T5 and sample files. | Test fixtures | **Conditional**, and **unexecuted** |\n\nPrerequisites: T1 before T2\u2013T4. T5 after T1 and the adoption decision. T6 and T7 after T5.\n\n**Unexecuted checks:** none were run. Every check above is a plan only.\n\n## 5. Blockers\n- The image-source and rendering contract documents are not in this workspace. T1's edge types need them, so read them before building. This is a prerequisite and does not stop the design.\n- Library documentation is unavailable. This blocks T5\u2013T7 until it is supplied or another decoder is chosen.\n- The target's allocator situation is unknown. It affects T4 and the T2 numbers.\n\n## Readiness summary\n- **Ready:** T1, T3, and the mechanism parts of T2 and T4. Build only on a build request.\n- **Conditional:** T5, T6, T7, and the numeric parts of T2 and T4.\n- **Blocked:** none outright.\n\nNo build was requested, so I implemented nothing.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional.",
+  "turn2": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 7.2,
+    "session_id": "c6e59f77-dd15-41d1-a817-4a2e506d7684",
+    "cost_usd": 0.128474,
+    "turns": 1,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 3803,
+      "cache_read_input_tokens": 29981,
+      "output_tokens": 490,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 3803,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 490,
+          "cache_read_input_tokens": 29981,
+          "cache_creation_input_tokens": 3803,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 3803
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Understood. I'm not pursuing the library commitment. The design stays as filed in chat, and I changed nothing in the repository.\n\n**Resulting state**\n- **Library adoption:** declined. It is not chosen, vendored, installed, or added to a manifest, and I will not research it further. I am not making any claims about its formats or allocation behavior.\n- **Conditional (unchanged):**\n  - T5, the library adapter.\n  - T6, the format support list.\n  - T7, real-decode verification, which is unexecuted.\n  - The numeric parts of T2 and T4, which depend on target memory facts.\n- **Ready (independent of the library):**\n  - T1, the `ThumbnailDecoder` seam, loader core, and typed errors.\n  - T3, cancel, retry, and failure behavior.\n  - The mechanism parts of T2 and T4.\n- **Blocked:** none.\n\n**What would release the conditional work**\n- You choose a decoder, either this library once its documentation is available or an alternative. T5 and T6 are then re-planned against verified facts.\n- You supply the target's allocator situation and memory ceiling. That settles the numeric parts of T2 and T4.\n- You supply the settled image-source and rendering contracts. T1's edge types need them before build.\n\nNo build was requested, so I implemented nothing. If you want T1, T3, and the mechanism parts of T2 and T4 built against a fake decoder, tell me. I would first read the subject's layout and the two settled contracts.",
+    "skill_invoked": false,
+    "tool_counts": {},
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

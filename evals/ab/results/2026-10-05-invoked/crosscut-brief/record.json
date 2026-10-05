@@ -1,0 +1,69 @@
+{
+  "case": "crosscut",
+  "condition": "brief",
+  "prompt": "Add archiving to this task tracker: `python -m tasks archive <id>` moves a completed task out of the active list into an archive that persists across runs, and `python -m tasks list --archived` shows archived tasks. Archiving an unknown, incomplete, or already archived task must exit nonzero and leave the stored data unchanged. Existing data files and commands must keep working, and task ids must not be reused. Run the existing checks.",
+  "invoked_explicitly": true,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 41.5,
+    "session_id": "460d28b0-38de-4f12-b28b-28eb0ab6164f",
+    "cost_usd": 0.20471500000000004,
+    "turns": 18,
+    "usage": {
+      "input_tokens": 26,
+      "cache_creation_input_tokens": 19883,
+      "cache_read_input_tokens": 375305,
+      "output_tokens": 5007,
+      "output_tokens_details": {
+        "thinking_tokens": 187
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 19883,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 658,
+          "cache_read_input_tokens": 33405,
+          "cache_creation_input_tokens": 287,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 287
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Archiving works: `python -m tasks archive <id>` and `python -m tasks list --archived` both behave as you described, and the existing checks pass.\n\n**What changed**\n- **Storage (`tasks/store.py`):** archived tasks are kept in a new `\"archived\"` list in the same data file. They keep their `done` state.\n- **Old data files:** files without the `\"archived\"` key still load. The key is added only when you archive something, so loading never rewrites a file.\n- **Ids (`tasks/store.py`):** `next_id` is untouched by archiving, so an archived task's id is never reused.\n- **Commands (`tasks/__main__.py`):** I added the `archive` command and a `--archived` flag on `list`. Plain `list`, `add` and `done` behave as before.\n- **Rejections:** archiving an unknown, incomplete or already archived task prints an error to stderr and exits 1. The data file is only written after the move succeeds, so nothing changes on a rejection.\n- **Tests (`test_tasks.py`):** I added three tests, covering archive persistence with no id reuse, the three rejection cases leaving the file byte-identical, and a data file from before this change.\n\n**What I ran**\n- `python -m unittest -v`: all 5 tests pass (the 2 existing ones and my 3).\n- A real CLI run with a temporary data file, which I deleted afterwards:\n  - Archiving an incomplete task exited 1.\n  - Archiving a completed task exited 0.\n  - Archiving the same task again and archiving an unknown id both exited 1, and the file was unchanged.\n  - `list` showed only the active task and `list --archived` showed the archived one.\n  - A task added afterwards got id 3.\n\n**Not done**\n- The repo has no other checks (no linter or CI config), so unit tests were all there was to run.\n- There is no `unarchive` command, since you didn't ask for one.\n- Writes are not atomic and there is no file locking. That was already true of the code, and I left it alone.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 5,
+      "Edit": 4,
+      "Glob": 1,
+      "PowerShell": 3,
+      "Read": 3,
+      "Write": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "tasks/__main__.py",
+    "tasks/store.py",
+    "test_tasks.py"
+  ],
+  "diff": "diff --git a/tasks/__main__.py b/tasks/__main__.py\nindex c6c7ae3..5c77ed1 100644\n--- a/tasks/__main__.py\n+++ b/tasks/__main__.py\n@@ -9,17 +9,21 @@ def main(argv=None):\n     parser = argparse.ArgumentParser(prog=\"tasks\")\n     sub = parser.add_subparsers(dest=\"command\", required=True)\n     sub.add_parser(\"add\").add_argument(\"title\")\n-    sub.add_parser(\"list\")\n+    sub.add_parser(\"list\").add_argument(\"--archived\", action=\"store_true\")\n     sub.add_parser(\"done\").add_argument(\"id\", type=int)\n+    sub.add_parser(\"archive\").add_argument(\"id\", type=int)\n     args = parser.parse_args(argv)\n     try:\n         if args.command == \"add\":\n             print(store.add(args.title)[\"id\"])\n         elif args.command == \"list\":\n-            for task in store.load()[\"tasks\"]:\n+            tasks = store.list_archived() if args.archived else store.load()[\"tasks\"]\n+            for task in tasks:\n                 print(f\"{task['id']:>3} [{'x' if task['done'] else ' '}] {task['title']}\")\n         elif args.command == \"done\":\n             store.complete(args.id)\n+        elif args.command == \"archive\":\n+            store.archive(args.id)\n     except store.TaskError as exc:\n         print(exc, file=sys.stderr)\n         return 1\ndiff --git a/tasks/store.py b/tasks/store.py\nindex ba03e9d..4591b65 100644\n--- a/tasks/store.py\n+++ b/tasks/store.py\n@@ -39,3 +39,23 @@ def complete(task_id, path=DEFAULT_PATH):\n             save(data, path)\n             return task\n     raise TaskError(f\"no task {task_id}\")\n+\n+\n+def archive(task_id, path=DEFAULT_PATH):\n+    data = load(path)\n+    archived = data.setdefault(\"archived\", [])\n+    if any(task[\"id\"] == task_id for task in archived):\n+        raise TaskError(f\"task {task_id} is already archived\")\n+    for task in data[\"tasks\"]:\n+        if task[\"id\"] == task_id:\n+            if not task[\"done\"]:\n+                raise TaskError(f\"task {task_id} is not complete\")\n+            data[\"tasks\"].remove(task)\n+            archived.append(task)\n+            save(data, path)\n+            return task\n+    raise TaskError(f\"no task {task_id}\")\n+\n+\n+def list_archived(path=DEFAULT_PATH):\n+    return load(path).get(\"archived\", [])\ndiff --git a/test_tasks.py b/test_tasks.py\nindex 563125d..e95ba4a 100644\n--- a/test_tasks.py\n+++ b/test_tasks.py\n@@ -23,6 +23,32 @@ class StoreTest(unittest.TestCase):\n         with self.assertRaises(store.TaskError):\n             store.complete(42, self.path)\n \n+    def test_archive_persists_and_ids_not_reused(self):\n+        first = store.add(\"a\", self.path)\n+        store.complete(first[\"id\"], self.path)\n+        store.archive(first[\"id\"], self.path)\n+        data = store.load(self.path)\n+        self.assertEqual(data[\"tasks\"], [])\n+        self.assertEqual([t[\"id\"] for t in store.list_archived(self.path)], [first[\"id\"]])\n+        self.assertNotEqual(store.add(\"b\", self.path)[\"id\"], first[\"id\"])\n+\n+    def test_archive_rejections_leave_data_unchanged(self):\n+        task = store.add(\"a\", self.path)\n+        store.add(\"b\", self.path)\n+        store.complete(task[\"id\"], self.path)\n+        store.archive(task[\"id\"], self.path)\n+        before = self.path.read_text(encoding=\"utf-8\")\n+        for bad in (99, 2, task[\"id\"]):  # unknown, incomplete, already archived\n+            with self.assertRaises(store.TaskError):\n+                store.archive(bad, self.path)\n+        self.assertEqual(self.path.read_text(encoding=\"utf-8\"), before)\n+\n+    def test_legacy_file_without_archived_key(self):\n+        self.path.write_text('{\"next_id\": 2, \"tasks\": [{\"id\": 1, \"title\": \"x\", \"done\": true}]}')\n+        self.assertEqual(store.list_archived(self.path), [])\n+        store.archive(1, self.path)\n+        self.assertEqual(store.load(self.path)[\"next_id\"], 2)\n+\n \n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}

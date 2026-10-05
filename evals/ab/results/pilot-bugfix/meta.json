@@ -1,0 +1,36 @@
+{
+  "model": "claude-sonnet-5-5",
+  "budget_usd": 0.5,
+  "claude": "2.1.289 (Claude Code)",
+  "tools": [
+    "Read",
+    "Edit",
+    "Write",
+    "Glob",
+    "Grep",
+    "Skill",
+    "Bash(python:*)",
+    "Bash(python3:*)",
+    "Bash(py:*)",
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git log:*)"
+  ],
+  "arms": [
+    "plain",
+    "brief",
+    "skill"
+  ],
+  "skill_files": [
+    "NOTICE.md",
+    "SKILL.md",
+    "agents\\openai.yaml",
+    "references\\artifacts.md",
+    "references\\design-method.md",
+    "references\\existing-projects.md",
+    "references\\implementation.md",
+    "references\\research.md",
+    "references\\terminology.md",
+    "scripts\\run_guard.py"
+  ]
+}

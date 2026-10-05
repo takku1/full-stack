@@ -1,0 +1,105 @@
+{
+  "case": "E04",
+  "condition": "plain",
+  "prompt": "Design image-thumbnail loading for a no_std Rust desktop. The proposed image library's supported formats and allocation requirements cannot be verified because its documentation is unavailable. The image source and rendering contracts are already settled. Do not browse or invent dependency facts. Complete independent design and state exactly which work is conditional.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 18.9,
+    "session_id": "2ecfd502-b6d9-4aeb-967a-70000f2316f1",
+    "cost_usd": 0.0771266,
+    "turns": 2,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 12349,
+      "cache_read_input_tokens": 36763,
+      "output_tokens": 2037,
+      "output_tokens_details": {
+        "thinking_tokens": 346
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 12349,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1900,
+          "cache_read_input_tokens": 22954,
+          "cache_creation_input_tokens": 3204,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 3204
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "The repo only holds a placeholder commit. `AGENTS.md` points to `skill/full-stack/references/terminology.md` and `docs/design-decisions.md`, and neither exists here, so I couldn't read them. I wrote this design in chat and changed no files.\n\nI treat the image-source and rendering contracts as fixed and don't restate them. The design only touches them at two seams, named below. I assume nothing about the image library.\n\n## Unconditional design (needs nothing from the library)\n\n**1. A `ThumbnailDecoder` port that we own.** The loader depends on this trait and never on the library directly.\n- `probe(&[u8]) -> Result<ImageInfo, DecodeError>` returns width, height and a pixel-format tag from the header only.\n- `decode_scaled(&[u8], target: Size, out: &mut [u8]) -> Result<Written, DecodeError>` writes into a caller-provided buffer.\n- `scratch_bytes(&ImageInfo, target) -> Option<usize>` reports the decoder's working-memory need, or `None` if it can't be bounded.\n- `DecodeError` is our own enum, with variants `Unsupported`, `Corrupt`, `TooLarge` and `OutOfBudget`. The adapter maps library errors into it.\n- The caller-buffer shape works whether or not the library allocates. A heap-backed adapter can wrap this trait, and the reverse is harder.\n\n**2. Pipeline.** The source contract delivers bytes, `probe` runs, then the size gate, then decode, then the result is handed to rendering as a finished thumbnail. The pipeline is `Source \u2192 probe \u2192 admit \u2192 decode_scaled \u2192 Thumbnail \u2192 Render`. Both seams use the existing contracts unchanged. If the thumbnail pixel format differs from what rendering accepts, that is a mismatch to report. The rendering contract does not change to absorb it.\n\n**3. Budgeting and admission.** The thumbnail loader gets a fixed memory budget, set at construction.\n- Reject an image before decoding if its dimensions, the output buffer size or `scratch_bytes` exceed the per-image limit. Use checked arithmetic on `w*h*bpp`.\n- Output buffers come from a fixed pool of thumbnail-sized slots, so nothing is allocated per decode.\n- Decode runs one image at a time, or N at a time with N set by the budget.\n\n**4. Thumbnail cache.** Entries are keyed by source id plus target size and use LRU eviction. The cache stays within its slot pool and never grows.\n\n**5. Failure behavior.** Any `DecodeError` produces a placeholder thumbnail and is remembered as a negative cache entry, so a bad file isn't re-decoded on every repaint. `OutOfBudget` is retried later and is not remembered as a permanent failure.\n\n**6. Scheduling.** Decode runs off the UI path (a cooperative task or a worker, depending on what the desktop provides) and never blocks a frame. Visible items are decoded first, and requests for items that have scrolled out of view are cancelled.\n\n**7. Tests.** A fake `ThumbnailDecoder` covers the admission, cache, negative-cache, budget and cancellation logic. None of this needs the real library.\n\n## Conditional work (blocked on facts we can't verify)\n\n| Work | Condition it depends on |\n|---|---|\n| Choosing which formats the file picker or loader advertises, and extension and magic-byte routing | The library's supported-format list |\n| Writing the real adapter (`probe`, `decode_scaled`, error mapping) | The library's API, which I haven't seen |\n| Real `scratch_bytes` values and the per-image limit | The library's allocation requirements |\n| Whether the build needs the `alloc` crate and a global allocator | Whether the library needs the heap |\n| Decode-time downscaling (e.g. JPEG DCT scaling) versus decode-then-resize | Whether the library supports scaled decoding. If not, a resize step is needed and its scratch cost is added to the budget. |\n| Progressive or streaming decode | Whether the library can decode incrementally |\n| Fuzzing and corrupt-input tests of the real adapter | The adapter existing |\n| Final choice of the library | Confirmation that it is `no_std`-compatible and that its license is acceptable |\n\n**Decision gate:** once the documentation is available, or a spike build compiles it for the target, go through the table row by row. The unconditional parts above can start now.\n\n**Fallback if the library fails the gate** (it isn't `no_std`, or its allocation can't be bounded): write the adapter for another decoder. Nothing outside the adapter changes, which is what the port is for.\n\n## Open questions for you\n- Is the target heap-less, or is `alloc` available? This decides whether the pool is static or `Vec`-backed.\n- Does rendering take a specific pixel format? I assumed one is already defined.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Glob": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "followup": "Do not pursue the unverified library commitment. Keep that affected work conditional.",
+  "turn2": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 12.5,
+    "session_id": "2ecfd502-b6d9-4aeb-967a-70000f2316f1",
+    "cost_usd": 0.1050742,
+    "turns": 1,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 2843,
+      "cache_read_input_tokens": 26158,
+      "output_tokens": 1134,
+      "output_tokens_details": {
+        "thinking_tokens": 151
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 2843,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1134,
+          "cache_read_input_tokens": 26158,
+          "cache_creation_input_tokens": 2843,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2843
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "Understood. I'm not committing to the library, and I'm not choosing a replacement. I'm revising two parts of my earlier design that went further than that.\n\n**Changes**\n- I'm dropping the \"fallback to another decoder\" idea. Naming an alternative is a second dependency commitment I can't back up either.\n- The port's caller-buffer shape and `scratch_bytes` assumed the decoder can write into a buffer we own and report its working memory. That is a hypothesis, not a fact. Those two pieces move from \"settled\" to \"provisional\", as listed below.\n- I'm dropping the JPEG-specific example, which implied format knowledge I don't have.\n\n**Unconditional (the library is irrelevant to these)**\n- The pipeline `Source \u2192 probe \u2192 admit \u2192 decode \u2192 Thumbnail \u2192 Render`, with the existing source and rendering contracts untouched.\n- Admission control with a fixed memory budget and checked size arithmetic.\n- A bounded thumbnail cache (LRU, fixed slots), negative caching of bad inputs, and a placeholder thumbnail on failure.\n- Off-frame scheduling, visible-first ordering and cancellation of requests that scroll out of view.\n- Our own `DecodeError` taxonomy.\n- Tests built on a fake decoder that implements the port. They cover admission, cache, negative-cache, budget and cancellation.\n\n**Provisional (stable intent, signature may change)**\n- The decoder port itself. I define its role as \"give the loader a thumbnail or a typed error\". The exact methods, including whether the caller supplies the output buffer, are fixed only when the real adapter is written.\n- The memory pool and its slot sizing. The pool must be sized for thumbnails, and that part is certain. Whether it must also cover decoder scratch space is unknown.\n\n**Conditional (blocked until the library's documentation or a verified build exists)**\n\n| Work | Depends on |\n|---|---|\n| The real adapter and its error mapping | The library's API |\n| Advertised formats and extension/magic-byte routing | The supported-format list |\n| Per-image limits and decoder scratch accounting | The library's allocation requirements |\n| Whether the build needs `alloc` and a global allocator | Whether the library needs the heap |\n| Scaled decode versus a separate resize step | Whether the library supports scaled decode |\n| Progressive or streaming decode | Whether the library can decode incrementally |\n| Fuzz and corrupt-input tests of the real adapter | The adapter existing |\n| Confirming the library is `no_std`-compatible, plus its license | A source that can be verified |\n\n**Next step:** build the unconditional items against the fake decoder now. Nothing in the conditional table starts until someone supplies verifiable library facts. If those facts rule the library out, the choice of replacement is a separate decision for you.\n\nI still need two answers from you:\n- Is `alloc` available on the target, or is it heap-less?\n- Does rendering already require a specific pixel format?",
+    "skill_invoked": false,
+    "tool_counts": {},
+    "unanswerable_questions": 0
+  },
+  "changed": [],
+  "diff": ""
+}

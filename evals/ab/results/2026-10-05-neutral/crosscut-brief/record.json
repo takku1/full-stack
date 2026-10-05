@@ -1,0 +1,67 @@
+{
+  "case": "crosscut",
+  "condition": "brief",
+  "prompt": "Add archiving to this task tracker: `python -m tasks archive <id>` moves a completed task out of the active list into an archive that persists across runs, and `python -m tasks list --archived` shows archived tasks. Archiving an unknown, incomplete, or already archived task must exit nonzero and leave the stored data unchanged. Existing data files and commands must keep working, and task ids must not be reused. Run the existing checks.",
+  "invoked_explicitly": false,
+  "turn1": {
+    "exit": 0,
+    "stderr_tail": [],
+    "seconds": 50.7,
+    "session_id": "b8b28ecb-252f-4d5b-819b-1711ef8aeca9",
+    "cost_usd": 0.22552420000000004,
+    "turns": 18,
+    "usage": {
+      "input_tokens": 26,
+      "cache_creation_input_tokens": 20962,
+      "cache_read_input_tokens": 382671,
+      "output_tokens": 6509,
+      "output_tokens_details": {
+        "thinking_tokens": 509
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 20962,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 453,
+          "cache_read_input_tokens": 34287,
+          "cache_creation_input_tokens": 484,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 484
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "subtype": "success",
+    "result": "I added `python -m tasks archive <id>` and `python -m tasks list --archived`. The existing unit tests and three new ones pass (5 total).\n\nI also ran the real CLI against a scratch `tasks.json`, which I deleted afterwards:\n- **Incomplete task:** `archive` exits nonzero with \"task 1 is not complete\".\n- **Completed task:** after `done`, `archive` succeeds. The task leaves the active list and shows under `list --archived`.\n- **Already archived or unknown:** both exit nonzero with a clear message.\n- **No id reuse:** the next `add` after archiving task 1 got id 2.\n\nThe rejection cases are covered by a unit test that checks the data file is byte-identical after each one. I didn't check that through the CLI.\n\n- **Storage:** archived tasks go in a new `\"archived\"` list in the same JSON file. Ids still come only from `next_id`.\n- **Old data files:** files without the `\"archived\"` key load fine. The key is added on load and written on the next save.\n- **Existing commands:** `add`, `list` and `done` behave as before.\n\nI didn't make saves atomic, so a crash partway through a write could still corrupt the file. The code was already like that and the request didn't cover it.\n\nThe changes are in `tasks/store.py`, `tasks/__main__.py` and `test_tasks.py`, and nothing is committed.",
+    "skill_invoked": false,
+    "tool_counts": {
+      "Bash": 8,
+      "Edit": 5,
+      "PowerShell": 3,
+      "Write": 1
+    },
+    "unanswerable_questions": 0
+  },
+  "changed": [
+    "tasks/__main__.py",
+    "tasks/store.py",
+    "test_tasks.py"
+  ],
+  "diff": "diff --git a/tasks/__main__.py b/tasks/__main__.py\nindex c6c7ae3..cd2ed4c 100644\n--- a/tasks/__main__.py\n+++ b/tasks/__main__.py\n@@ -1,4 +1,4 @@\n-\"\"\"python -m tasks add TITLE | list | done ID\"\"\"\n+\"\"\"python -m tasks add TITLE | list [--archived] | done ID | archive ID\"\"\"\n import argparse\n import sys\n \n@@ -9,17 +9,20 @@ def main(argv=None):\n     parser = argparse.ArgumentParser(prog=\"tasks\")\n     sub = parser.add_subparsers(dest=\"command\", required=True)\n     sub.add_parser(\"add\").add_argument(\"title\")\n-    sub.add_parser(\"list\")\n+    sub.add_parser(\"list\").add_argument(\"--archived\", action=\"store_true\")\n     sub.add_parser(\"done\").add_argument(\"id\", type=int)\n+    sub.add_parser(\"archive\").add_argument(\"id\", type=int)\n     args = parser.parse_args(argv)\n     try:\n         if args.command == \"add\":\n             print(store.add(args.title)[\"id\"])\n         elif args.command == \"list\":\n-            for task in store.load()[\"tasks\"]:\n+            for task in store.load()[\"archived\" if args.archived else \"tasks\"]:\n                 print(f\"{task['id']:>3} [{'x' if task['done'] else ' '}] {task['title']}\")\n         elif args.command == \"done\":\n             store.complete(args.id)\n+        elif args.command == \"archive\":\n+            store.archive(args.id)\n     except store.TaskError as exc:\n         print(exc, file=sys.stderr)\n         return 1\ndiff --git a/tasks/store.py b/tasks/store.py\nindex ba03e9d..21f83c6 100644\n--- a/tasks/store.py\n+++ b/tasks/store.py\n@@ -1,4 +1,7 @@\n-\"\"\"JSON file storage for tasks. Data file format: {\"next_id\": int, \"tasks\": [...]}.\"\"\"\n+\"\"\"JSON file storage for tasks. Data file format: {\"next_id\": int, \"tasks\": [...], \"archived\": [...]}.\n+\n+\"archived\" is optional in older files. Ids come from next_id only, so archived ids are never reused.\n+\"\"\"\n import json\n import os\n from pathlib import Path\n@@ -12,9 +15,11 @@ class TaskError(Exception):\n \n def load(path=DEFAULT_PATH):\n     if not Path(path).exists():\n-        return {\"next_id\": 1, \"tasks\": []}\n+        return {\"next_id\": 1, \"tasks\": [], \"archived\": []}\n     with open(path, encoding=\"utf-8\") as handle:\n-        return json.load(handle)\n+        data = json.load(handle)\n+    data.setdefault(\"archived\", [])\n+    return data\n \n \n def save(data, path=DEFAULT_PATH):\n@@ -39,3 +44,18 @@ def complete(task_id, path=DEFAULT_PATH):\n             save(data, path)\n             return task\n     raise TaskError(f\"no task {task_id}\")\n+\n+\n+def archive(task_id, path=DEFAULT_PATH):\n+    data = load(path)\n+    if any(task[\"id\"] == task_id for task in data[\"archived\"]):\n+        raise TaskError(f\"task {task_id} is already archived\")\n+    for task in data[\"tasks\"]:\n+        if task[\"id\"] == task_id:\n+            if not task[\"done\"]:\n+                raise TaskError(f\"task {task_id} is not complete\")\n+            data[\"tasks\"].remove(task)\n+            data[\"archived\"].append(task)\n+            save(data, path)\n+            return task\n+    raise TaskError(f\"no task {task_id}\")\ndiff --git a/test_tasks.py b/test_tasks.py\nindex 563125d..f7cae21 100644\n--- a/test_tasks.py\n+++ b/test_tasks.py\n@@ -23,6 +23,32 @@ class StoreTest(unittest.TestCase):\n         with self.assertRaises(store.TaskError):\n             store.complete(42, self.path)\n \n+    def test_archive(self):\n+        a = store.add(\"a\", self.path)\n+        b = store.add(\"b\", self.path)\n+        store.complete(a[\"id\"], self.path)\n+        store.archive(a[\"id\"], self.path)\n+        data = store.load(self.path)\n+        self.assertEqual([t[\"id\"] for t in data[\"tasks\"]], [b[\"id\"]])\n+        self.assertEqual([t[\"id\"] for t in data[\"archived\"]], [a[\"id\"]])\n+        self.assertEqual(store.add(\"c\", self.path)[\"id\"], 3)\n+\n+    def test_archive_rejections_leave_data_unchanged(self):\n+        a = store.add(\"a\", self.path)\n+        b = store.add(\"b\", self.path)\n+        store.complete(b[\"id\"], self.path)\n+        store.archive(b[\"id\"], self.path)\n+        before = self.path.read_text()\n+        for task_id in (a[\"id\"], b[\"id\"], 99):\n+            with self.assertRaises(store.TaskError):\n+                store.archive(task_id, self.path)\n+        self.assertEqual(self.path.read_text(), before)\n+\n+    def test_legacy_file_without_archived(self):\n+        self.path.write_text('{\"next_id\": 2, \"tasks\": [{\"id\": 1, \"title\": \"t\", \"done\": true}]}')\n+        store.archive(1, self.path)\n+        self.assertEqual(store.load(self.path)[\"archived\"][0][\"id\"], 1)\n+\n \n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "outside_expected": [],
+  "hidden_exit": 0,
+  "hidden_output": "all hidden checks passed"
+}
