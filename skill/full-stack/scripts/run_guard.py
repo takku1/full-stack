@@ -136,8 +136,37 @@ def protected_lines(base, current):
     return protected
 
 
+def protected_blocks_intact(before, after, protected):
+    """True when every run of protected lines appears unchanged, contiguous, and in order in `after`.
+    difflib may align an insert next to a protected hunk as if it were inside it; comparing content
+    avoids that false report (field report 3, D4). Whitespace-only blocks could match elsewhere, so
+    they are left to the positional check."""
+    blocks, run = [], []
+    for i in sorted(protected):
+        if run and i != run[-1] + 1:
+            blocks.append(run)
+            run = []
+        run.append(i)
+    if run:
+        blocks.append(run)
+    start = 0
+    for block in blocks:
+        lines = [before[i] for i in block if i < len(before)]
+        if not any(line.strip() for line in lines):
+            return False
+        for pos in range(start, len(after) - len(lines) + 1):
+            if after[pos:pos + len(lines)] == lines:
+                start = pos + len(lines)
+                break
+        else:
+            return False
+    return True
+
+
 def hunk_violations(before, after, protected):
     """Edits from `before` to `after` that change or split a protected line."""
+    if protected and protected_blocks_intact(before, after, protected):
+        return []
     hits = []
     for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(None, before, after, autojunk=False).get_opcodes():
         if tag == "equal":
@@ -203,7 +232,9 @@ def cmd_start(args):
         for o in others:
             print(f"collision: open run with overlapping write set: {o}")
         print("Edit around these, sequence after the other run, or ask; nothing was recorded.")
-        print("If the user confirms an edit belongs to this work, rerun with --adopt PATH.")
+        if outside_edits:
+            print("If the user confirms these edits belong to this work, rerun with: --adopt "
+                  + " ".join(shlex.quote(p) for p in outside_edits))
         return 3
     run_id = time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
     snapshots = {}
@@ -265,7 +296,7 @@ def run_check(root, record, command, criterion, tail_lines):
         code, output = 127, str(exc)
     tail = output.strip().splitlines()[-tail_lines:]
     record["checks"].append({
-        "command": " ".join(command),
+        "command": shlex.join(command),
         "criterion": criterion,
         "exit": code,
         "seconds": round(time.time() - began, 2),
@@ -285,7 +316,7 @@ def cmd_exec(args):
     code, tail = run_check(root, record, command, args.criterion, args.tail)
     save(path, record)
     print("\n".join(tail))
-    print(f"[run_guard] exit {code}: {' '.join(command)}")
+    print(f"[run_guard] exit {code}: {shlex.join(command)}")
     return code
 
 
@@ -321,7 +352,7 @@ def cmd_checks(args):
         code, tail = run_check(root, record, command, criterion, args.tail)
         save(path, record)
         status = "PASS" if code == 0 else f"FAIL (exit {code})"
-        print(f"[run_guard] {status}: {criterion or ''} :: {' '.join(command)}")
+        print(f"[run_guard] {status}: {criterion or ''} :: {shlex.join(command)}")
         if code:
             failed += 1
             print("\n".join("    " + line for line in tail))
@@ -463,12 +494,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="run_guard", description="Mechanical checks for a full-stack run.")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("start")
-    p.add_argument("--write-set", nargs="+", default=[], metavar="PATTERN",
+    p.add_argument("--write-set", nargs="+", action="extend", default=[], metavar="PATTERN",
                    help="repo-relative globs or directory prefixes ending in /")
     p.add_argument("--label", help="work package ID or short name")
-    p.add_argument("--shared", nargs="+", default=[], metavar="PATTERN",
+    p.add_argument("--shared", nargs="+", action="extend", default=[], metavar="PATTERN",
                    help="files other workers may also edit; their uncommitted hunks are protected")
-    p.add_argument("--adopt", nargs="+", default=[], metavar="PATH",
+    p.add_argument("--adopt", nargs="+", action="extend", default=[], metavar="PATH",
                    help="uncommitted paths the user confirmed belong to this work")
     p = sub.add_parser("exec")
     p.add_argument("--run")
@@ -477,8 +508,11 @@ def main(argv=None):
     p.add_argument("command", nargs=argparse.REMAINDER)
     p = sub.add_parser("checks", help="run several acceptance checks in one call")
     p.add_argument("--run")
-    p.add_argument("--each", action="append", default=[], metavar="'CRITERION :: COMMAND'")
-    p.add_argument("--plan", help="JSON list of {criterion, command}")
+    p.add_argument("--each", action="append", default=[], metavar="'CRITERION :: COMMAND'",
+                   help="COMMAND is split like a POSIX shell and run without a shell: quotes group "
+                        "words and are removed. Put pipes, redirects, or commands that need their "
+                        "own quoting (powershell -Command, sh -c) in a script file, or use --plan")
+    p.add_argument("--plan", help="JSON list of {criterion, command}; an argv array is passed unchanged")
     p.add_argument("--tail", type=int, default=20)
     for name in ("check", "report", "finish"):
         sub.add_parser(name).add_argument("--run")

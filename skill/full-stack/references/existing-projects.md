@@ -8,6 +8,10 @@ Work at the requested scope. Reuse existing providers through their contracts. A
 
 For uncertain runtime claims, run a relevant check when feasible and useful. Otherwise state what code was inspected and what execution evidence remains absent. Avoid expensive whole-project testing for a documentation-only comparison.
 
+## Open-ended "continue"
+
+When asked to continue without a named outcome, and the user leaves the pick to you, prefer (1) verified but unfinished work shown by the registry or the guard log (`.git/full-stack-runs/`), then (2) the next open item named by the owning concept or contract, then (3) the registry's highest-priority open row. State the pick and the reason before building. Uncommitted edits with no closed run are unverified; check whether another session owns them before adopting them.
+
 ## Design deltas
 
 Describe current behavior, desired behavior, affected boundaries, and an incremental migration. Preserve valuable existing behavior and specify temporary adapters' removal conditions. Keep current and target diagrams labeled if both are necessary.

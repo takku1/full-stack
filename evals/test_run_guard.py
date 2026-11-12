@@ -118,6 +118,7 @@ class RunGuardTest(unittest.TestCase):
         code, out = guard(self.repo, "start", "--write-set", "src/")
         self.assertEqual(code, 3)
         self.assertIn("uncommitted edit made outside this run: src/a.py", out)
+        self.assertIn("rerun with: --adopt src/a.py", out)  # one list form (field report 3, D1)
 
     def test_adopted_edit_is_allowed_and_tracked_as_run_change(self):
         (self.repo / "src" / "a.py").write_text("resumed work\n")
@@ -178,7 +179,7 @@ class RunGuardTest(unittest.TestCase):
         tree = Path(self.tmp.name) / "tree"
         sh(self.repo, "git", "worktree", "add", "-q", str(tree))
         guard(tree, "start", "--write-set", "src/b.py", "--label", "tree")
-        code, out = guard(self.repo, "report")
+        out = guard(self.repo, "report")[1]
         self.assertIn("`src/a.py`", out, "main tree report resolved another worktree's run")
 
     def test_close_refuses_failed_checks_without_accept_blockers(self):
@@ -259,6 +260,45 @@ class RunGuardTest(unittest.TestCase):
         code, out = guard(self.repo, "check")
         self.assertEqual(code, 1)
         self.assertIn("shared.txt (line 2", out)
+
+    def test_shared_claim_allows_insert_adjacent_to_outside_hunk(self):
+        # Field report 3, D4: another session's uncommitted section is followed by this run's
+        # new section. The protected lines stay byte-identical, but difflib may align the
+        # insert inside the protected span; that must not count as changing the outside edit.
+        base = ["# Roadmap\n", "\n", "## A\n", "| A | row |\n", "\n", "## Z\n", "| Z | row |\n"]
+        (self.repo / "reg.md").write_text("".join(base))
+        sh(self.repo, "git", "add", "reg.md")
+        sh(self.repo, "git", "commit", "-qm", "reg")
+        theirs = base[:5] + ["\n", "## B\n", "| B | row |\n"] + base[5:]
+        (self.repo / "reg.md").write_text("".join(theirs))
+        self.assertEqual(guard(self.repo, "start", "--shared", "reg.md")[0], 0)
+        mine = theirs[:5] + ["\n", "## C\n", "| C | row |\n"] + theirs[5:]
+        (self.repo / "reg.md").write_text("".join(mine))
+        code, out = guard(self.repo, "check")
+        self.assertEqual(code, 0, out)
+        # Splitting the outside section is still a violation.
+        split = theirs[:7] + ["| C | wedged |\n"] + theirs[7:]
+        (self.repo / "reg.md").write_text("".join(split))
+        code, out = guard(self.repo, "check")
+        self.assertEqual(code, 1, out)
+        self.assertIn("reg.md (line", out)
+
+    def test_repeated_list_flags_accumulate(self):
+        # Field report 3, D1: --adopt a --adopt b kept only b, and --write-set x --write-set y only y.
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        (self.repo / "src" / "b.py").write_text("b = 2\n")
+        code, out = guard(self.repo, "start", "--write-set", "src/", "--write-set", "README.md",
+                          "--adopt", "src/a.py", "--adopt", "src/b.py")
+        self.assertEqual(code, 0, out)
+        self.assertIn("write set: src/, README.md", out)
+
+    def test_report_shows_check_argv_with_quoting(self):
+        # Field report 3, D3: the report joined argv with spaces, so a quoted argument read as
+        # several words and the report did not show what actually ran.
+        guard(self.repo, "start", "--write-set", "src/")
+        guard(self.repo, "checks", "--each", f"""spaced :: "{sys.executable}" -c 'print("a b")'""")
+        out = guard(self.repo, "report")[1]
+        self.assertIn("""'print("a b")'""", out)
 
     def test_two_workers_may_share_a_file_but_not_an_exclusive_claim(self):
         self.assertEqual(guard(self.repo, "start", "--shared", "README.md", "--label", "WP-1")[0], 0)

@@ -81,7 +81,11 @@ its log, not memory, is the record. A guarded run takes three calls:
 2. **check plan + write checks**: all acceptance checks, including every
    check in the design's assurance table, in one call,
    `run_guard.py checks --each "<criterion> :: <command>" --each ...`
-   (or `--plan checks.json`). Rerun it after a correction.
+   (or `--plan checks.json`). Rerun it after a correction. Each command is
+   split like a POSIX shell and run without one, so quotes are removed:
+   put pipes, redirects, and `powershell -Command` or `sh -c` one-liners in
+   a script file, or give `--plan` an argv array. Repeat or list paths
+   freely: `--adopt a b` and `--adopt a --adopt b` are the same.
 3. **verify gate + run report + run close**: `run_guard.py close` prints
    the report to paste into the completion report and finishes the run only
    if scope is clean and checks were recorded. If not, fix the problem, or
