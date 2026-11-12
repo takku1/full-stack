@@ -136,7 +136,7 @@ Status: applied 2026-11-12; non-inferiority unevaluated (FS-019). Research: [opt
 FS-009's extra cost tracked extra turns (bugfix 14 vs 8, crosscut 24 vs 18) more than instruction size, and cached instruction prefixes cost 0.05–0.1× on later turns ([55]). Changes:
 
 - **Guard batch commands.** `run_guard.py checks` runs every acceptance check in one call (`--each "criterion :: command"` or `--plan`). `close` combines check, report, and finish, and refuses to finish an unclean run without `--accept-blockers`. A guarded run drops from 4 + N calls to 3. `exec`, `check`, `report`, and `finish` remain for compatibility.
-- **Turn budget in the core.** Read needed files in one batch, never reread, and use the batch commands.
+- **Turn budget in the core.** Read needed files in one batch, reread only after a file changed or new evidence makes it relevant, and use the batch commands. (First worded as "never reread"; an external review on 2026-11-12 pointed out that this breaks after edits or new check evidence, so it was corrected the same day.)
 - **Output caps.** About 250 words per layer decision record; at most five lines for a routine edit; "none" for empty sections; reference brief IDs instead of restating them.
 - **Evidence by row.** Stack research records one row per candidate (version, date, license, limit, URL), with subagents on a smaller model where the host allows it.
 - **Deduplication.** The implement flow no longer repeats concurrency rules held by the core and the implementation reference, and the design flow drops guidance the core already states.

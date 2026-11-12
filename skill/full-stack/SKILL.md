@@ -21,8 +21,9 @@ Always:
   over scaffolding or mocks.
 - Report what actually ran. Never call an unexecuted check passed. List
   work as ready, conditional, or blocked.
-- Spend few turns: read every file you need in one parallel batch, never
-  reread one, and use the scripts' batch commands. Write only what someone
+- Spend few turns: read every file you need in one parallel batch, reread
+  only after it changed or new evidence makes it relevant, and use the
+  scripts' batch commands. Write only what someone
   will use: tables over prose, one line per unchanged item, no repetition.
 
 A one- or two-file fix needs nothing more. Otherwise load only what applies:

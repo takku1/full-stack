@@ -35,7 +35,7 @@ Every turn resends the conversation. With prompt caching, a repeated prefix is b
 
 Ranked by expected saving relative to risk. None is applied yet; each needs the check in section 4.
 
-1. **Turn budget in the core.** "Read every file you need in one batch. Run each script once per stage. Don't re-read a file you've already read." Target: fewer turns on bugfix and crosscut, with the same hidden-check results.
+1. **Turn budget in the core.** "Read every file you need in one batch. Run each script once per stage. Reread a file only after it changed or new evidence makes it relevant." Target: fewer turns on bugfix and crosscut, with the same hidden-check results.
 2. **Output caps.** Decision record of at most about 250 words per affected layer. Keep-current layers get one line. A routine edit gets a change note of five lines or fewer. A design repeats nothing from the brief; it links to it.
 3. **Evidence by excerpt.** In the stack flow, record the version, date, license, and source URL per candidate, not page summaries. Subagents return a fixed evidence table only.
 4. **Cheaper evidence model** where the host supports per-subagent models: evidence gathering on a smaller model, decisions on the main one. Gated by FS-018.

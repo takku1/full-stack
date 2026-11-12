@@ -8,6 +8,9 @@ Package 0.4.0, the modular layer redesign, is built and passes its packaging and
 
 ## Active Focus
 
+Feature freeze: evidence before features. Order: FS-023, then FS-015, then FS-016. An [external review](research/review-2026-11-12-external.md) (2026-11-12) rated direction strong and empirical validation weak (3/10); its fixable defect, an absolute no-reread rule, is corrected.
+
+
 - FS-015: first greenfield trial of 0.4.0 end to end (stack brief → candidate sets → `check_stack.py profiles` → decision records → `check_stack.py check`).
 - FS-023: load the plugin live (hook blocks, subagent runs).
 - FS-005: re-verify host discovery and invocation, since `SKILL.md` changed shape.
