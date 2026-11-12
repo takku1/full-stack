@@ -162,6 +162,7 @@ def main() -> int:
                 skill / "templates" / "stack-brief.md", skill / "templates" / "decision-record.md",
                 skill / "rules" / "compatibility.json", skill / "scripts" / "check_stack.py",
                 skill / "scripts" / "run_guard.py", skill / "flows" / "assurance.md",
+                skill / "scripts" / "assurance.py", skill / "rules" / "assurance.json",
                 skill / "templates" / "assurance-table.md"] + [skill / "layers" / f"{name}.md" for name in layers]         + [skill / "assurance" / f"{name}.md" for name in DISCIPLINES]
     for path in required:
         if not path.is_file():

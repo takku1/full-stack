@@ -8,8 +8,7 @@ falsifiable ("a user cannot read another user's lists"), not qualities
 ```markdown
 ## Assurance
 
-Screen: security T1, verification T1, reliability T1, others T0
-(internet-facing, multi-user, external payment API; no personal data beyond email)
+Screen: security T1 (boundary, tenants); verification T1 (build, tenants); reliability T1 (external); observability T1 (boundary); others T0
 
 | ID | Discipline | Claim | Could fail by | Control (owner) | Check | Evidence |
 |---|---|---|---|---|---|---|
@@ -20,4 +19,6 @@ Screen: security T1, verification T1, reliability T1, others T0
 Evidence status: **documented** (the provider's docs say so, linked),
 **tested** (a check ran and passed in this run), **inferred** (reasoned,
 not checked), **unknown**. Only **tested** satisfies a tier 2 claim. A row
-without a check is listed under blockers.
+without a check is listed under blockers. Paste the Screen line from
+`scripts/assurance.py screen`; `scripts/assurance.py check` finds gaps, and
+each row's ID goes in its check's criterion so the run guard can match them.

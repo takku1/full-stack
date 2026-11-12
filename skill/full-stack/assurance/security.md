@@ -1,6 +1,6 @@
 ---
 discipline: security
-triggers: [internet or trust boundary, multiple users or tenants, personal data, money or irreversible actions]
+triggers: [internet or trust boundary, multiple users or tenants, personal data, money or irreversible actions, untrusted code or content, secrets or confidential files]
 tier2_when: [money, health, safety, regulated data, many users]
 ---
 

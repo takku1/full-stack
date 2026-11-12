@@ -1,6 +1,6 @@
 ---
 discipline: verification
-triggers: [any build request, multiple users or tenants, money or irreversible actions]
+triggers: [any build request, multiple users or tenants, money or irreversible actions, untrusted code or content]
 tier2_when: [money, health, safety, regulated data, a module others depend on]
 ---
 

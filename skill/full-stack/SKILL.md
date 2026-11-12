@@ -48,8 +48,8 @@ Templates: [stack brief](templates/stack-brief.md),
 [research](references/research.md), [artifacts](references/artifacts.md),
 [existing projects](references/existing-projects.md),
 [implementation](references/implementation.md). Scripts:
-`scripts/check_stack.py` (stack consistency), `scripts/run_guard.py`
-(write sets and executed checks). Run them with whichever of `python3`,
+`scripts/check_stack.py` (stack consistency), `scripts/assurance.py`
+(screen resolver), `scripts/run_guard.py` (write sets and executed checks). Run them with whichever of `python3`,
 `python`, or `py -3` works; on Windows `python` may be a non-working stub.
 
 In an existing repository every layer starts as "keep current".

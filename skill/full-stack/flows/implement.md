@@ -76,23 +76,28 @@ implement:
 its log, not memory, is the record. A guarded run takes three calls:
 
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
-   --label <work ID>`. Exit 3 is a collision. `--shared` claims files other
-   workers also edit.
+   --label <work ID> --assurance <design file>` (or `--routine` for a
+   routine edit with no assurance table; `declare` sets either later).
+   Exit 3 is a collision. `--shared` claims files other workers also edit.
 2. **check plan + write checks**: all acceptance checks, including every
    check in the design's assurance table, in one call,
    `run_guard.py checks --each "<criterion> :: <command>" --each ...`
-   (or `--plan checks.json`). Rerun it after a correction. Each command is
+   (or `--plan checks.json`). Name each assurance row's ID in its
+   criterion (`"A-1 <claim> :: <command>"`). Rerun it after a correction. Each command is
    split like a POSIX shell and run without one, so quotes are removed:
    put pipes, redirects, and `powershell -Command` or `sh -c` one-liners in
    a script file, or give `--plan` an argv array. Repeat or list paths
    freely: `--adopt a b` and `--adopt a --adopt b` are the same.
 3. **verify gate + run report + run close**: `run_guard.py close` prints
    the report to paste into the completion report and finishes the run only
-   if scope is clean and checks were recorded. If not, fix the problem, or
+   if scope is clean, every check passed, and every assurance row has an
+   executed check. If not, fix the problem, or
    report it as a blocker and rerun with `--accept-blockers`.
 
 Without the guard, check with `git status` and `git diff` and say the run
-was unguarded.
+was unguarded. When taking over someone else's uncommitted work,
+`run_guard.py report --all` shows which earlier runs closed with passing
+checks.
 
 When the design contains a stack block, rerun
 `scripts/check_stack.py check` after any change to a layer choice; a

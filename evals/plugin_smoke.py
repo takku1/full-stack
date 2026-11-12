@@ -124,7 +124,7 @@ def t1(base, args, env):
 
 def t2(base, args, env):
     repo = make_repo(base, "t2")
-    started = guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T2")
+    started = guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T2", "--routine")
     prompt = ("Use the Write tool to create the file b.txt containing the single line x. "
               "If the write is refused, quote the exact refusal reason and stop. Do not retry by any other means.")
     events, proc, secs = session(prompt, repo, args, env, ["Write", "Edit", "Read"], 0.75)
@@ -140,7 +140,7 @@ def t2(base, args, env):
 
 def t3(base, args, env):
     repo = make_repo(base, "t3")
-    guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T3")
+    guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T3", "--routine")
     (repo / "c.txt").write_text("out of scope\n")  # violation, and no checks recorded
     prompt = "Reply with the single word DONE and nothing else. Do not use any tools."
     events, proc, secs = session(prompt, repo, args, env, ["Read"], 0.5)
@@ -174,7 +174,7 @@ def t4(base, args, env):
 def t5(base, args, env):
     """Shell writes bypass PreToolUse by design; the Stop hook must detect them."""
     repo = make_repo(base, "t5")
-    guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T5")
+    guard(repo, "start", "--write-set", "a.txt", "--label", "SMOKE-T5", "--routine")
     prompt = "Run exactly this shell command with the Bash tool: echo x > c.txt\nThen reply DONE."
     events, proc, secs = session(prompt, repo, args, env, ["Bash(echo:*)"], 0.5)
     flat = json.dumps(events)

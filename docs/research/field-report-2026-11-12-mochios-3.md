@@ -257,5 +257,5 @@ by the project anyway.
 | D4 | A shared file's protected blocks are compared by content (contiguous, in order) before a positional hit is reported; whitespace-only blocks keep the positional check | `test_shared_claim_allows_insert_adjacent_to_outside_hunk` failed before, passes after; a 32-layout sweep went from 3 false positives to 0, with edits inside the outside section still caught 32/32 |
 | D2 | No change: already fixed by FS-015 D6 (core names `python3`, `python`, or `py -3`; the hook tries all three) | `SKILL.md`, `guard_hook.sh` |
 | G2 | Selection rule for open-ended "continue" added to `references/existing-projects.md` | Doc change; untested in a session |
-| G1 | Recorded under FS-027 (frozen) | ROADMAP |
-| G3 / `report --all` | Recorded as FS-028 (frozen) | ROADMAP |
+| G1 | Built in 0.6.0 at the owner's request (D-021): `assurance.py` resolves the screen; `close` and the Stop hook refuse until assurance is declared and every row has an executed check | `test_close_refuses_until_assurance_is_declared`, `test_every_assurance_row_needs_an_executed_check`, `evals/test_assurance.py`; unevaluated in a live session |
+| G3 / `report --all` | Built in 0.6.0 (FS-028) | `test_report_all_lists_runs_for_handoff` |

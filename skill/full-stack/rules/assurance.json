@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "notes": "Screen questions and observed capabilities raise disciplines to tier 1. 'requires' raises a dependency to at least tier 1 when its dependent is raised. 'always_on_build' disciplines are tier 1 on any build. Mirrors flows/assurance.md section 1; keep both in step.",
+  "questions": {
+    "boundary": {"ask": "Reachable from the internet or another trust boundary?", "raises": ["security", "observability"]},
+    "tenants": {"ask": "More than one user or tenant whose data must stay separate?", "raises": ["security", "verification"]},
+    "personal_data": {"ask": "Stores personal data?", "raises": ["privacy", "security"]},
+    "money": {"ask": "Moves money or performs irreversible actions?", "raises": ["security", "reliability", "verification"]},
+    "slo": {"ask": "States an availability or latency target?", "raises": ["reliability", "performance", "observability"]},
+    "schema": {"ask": "Changes persistent schema or data?", "raises": ["operations", "reliability"]},
+    "external": {"ask": "Calls external services or networks?", "raises": ["reliability"]},
+    "ui": {"ask": "Has a human-facing interface?", "raises": ["ux"]},
+    "unattended": {"ask": "Deployed or operated by someone else, or runs unattended?", "raises": ["operations", "observability"]},
+    "regulation": {"ask": "A named regulation, contract, or license in scope?", "raises": ["compliance"]},
+    "new_boundary": {"ask": "A new boundary or dependency the design must protect over time?", "raises": ["maintainability"]},
+    "paid": {"ask": "Hosted or paid infrastructure, or paid APIs?", "raises": ["cost"]},
+    "untrusted_code": {"ask": "Runs code, plugins, or content it does not control?", "raises": ["security", "verification"]},
+    "confidential": {"ask": "Reads, stores, or exposes secrets or confidential files?", "raises": ["security", "observability"]}
+  },
+  "requires": {
+    "privacy": ["security"],
+    "performance": ["observability"]
+  },
+  "always_on_build": ["verification"],
+  "disciplines": ["security", "verification", "reliability", "observability", "operations", "performance", "privacy", "ux", "maintainability", "cost", "compliance"]
+}

@@ -1,6 +1,6 @@
 ---
 discipline: observability
-triggers: [internet or trust boundary, availability or latency target, operated by others or unattended]
+triggers: [internet or trust boundary, availability or latency target, operated by others or unattended, secrets or confidential files]
 tier2_when: [stated availability target, several services, many users]
 ---
 

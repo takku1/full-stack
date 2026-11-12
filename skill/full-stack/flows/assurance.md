@@ -7,28 +7,36 @@ local tool trips almost nothing, a payment system trips most of it.
 
 ## 1. Screen
 
-Answer each question from the request, the stack brief, and the code. A
-"yes" raises the listed disciplines to at least tier 1. Record the answers
-in one line each; unknown counts as yes until evidence says otherwise.
+Answer every question from the request, the stack brief, and the code;
+unknown counts as yes until evidence says otherwise. Then resolve the
+answers with `scripts/assurance.py screen --yes <ids> --no <ids>
+[--unknown <ids>] [--high <disciplines>] [--build]`. It applies the
+rules in `rules/assurance.json` (including dependencies such as privacy
+requiring security) and prints the Screen line and the modules to load.
+Without Python, apply the table by hand: a "yes" raises the listed
+disciplines to at least tier 1.
 
-| Question | Raises |
+| Question (ID) | Raises |
 |---|---|
-| Reachable from the internet or another trust boundary? | security, observability |
-| More than one user or tenant whose data must stay separate? | security, verification |
-| Stores personal data? | privacy, security |
-| Moves money or performs irreversible actions? | security, reliability, verification |
-| States an availability or latency target? | reliability, performance, observability |
-| Changes persistent schema or data? | operations, reliability |
-| Calls external services or networks? | reliability |
-| Has a human-facing interface? | ux |
-| Deployed or operated by someone else, or runs unattended? | operations, observability |
-| A named regulation, contract, or license in scope? | compliance |
-| A new boundary or dependency the design must protect over time? | maintainability |
-| Hosted or paid infrastructure, or paid APIs? | cost |
+| `boundary` Reachable from the internet or another trust boundary? | security, observability |
+| `tenants` More than one user or tenant whose data must stay separate? | security, verification |
+| `personal_data` Stores personal data? | privacy, security |
+| `money` Moves money or performs irreversible actions? | security, reliability, verification |
+| `slo` States an availability or latency target? | reliability, performance, observability |
+| `schema` Changes persistent schema or data? | operations, reliability |
+| `external` Calls external services or networks? | reliability |
+| `ui` Has a human-facing interface? | ux |
+| `unattended` Deployed or operated by someone else, or runs unattended? | operations, observability |
+| `regulation` A named regulation, contract, or license in scope? | compliance |
+| `new_boundary` A new boundary or dependency the design must protect over time? | maintainability |
+| `paid` Hosted or paid infrastructure, or paid APIs? | cost |
+| `untrusted_code` Runs code, plugins, or content it does not control? | security, verification |
+| `confidential` Reads, stores, or exposes secrets or confidential files? | security, observability |
 
 **Tier 2** for a raised discipline when the consequence of failure is high:
 money, health, safety, regulated data, many users, or an irreversible
-action. Verification is never tier 0 for a build request.
+action; name those disciplines with `--high`. Verification is never tier 0
+for a build request (`--build`).
 
 ## 2. Load and apply
 
@@ -59,10 +67,13 @@ costly-commitment rule.
 
 ## 4. Hand off
 
-The table goes in the design's **assurance** section. When building, every
-row's check is an acceptance criterion: run them with
-`run_guard.py checks --each "<claim> :: <command>"`. A failing assurance
-check blocks `close` like any other criterion.
+The table goes in the design's **assurance** section; `scripts/assurance.py
+check DESIGN.md` reports raised disciplines with no row and rows with no
+check. When building, declare the table with `run_guard.py start ...
+--assurance DESIGN.md` and make every row's check an acceptance
+criterion that names its ID: `run_guard.py checks --each "A-1 <claim> ::
+<command>"`. `close` refuses while a row (other than documented
+evidence) has no executed check, or a check fails.
 
-Output cap: screen in at most twelve lines; one table row per claim; no
+Output cap: the answer IDs and the Screen line; one table row per claim; no
 restating module text.

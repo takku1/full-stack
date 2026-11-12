@@ -170,6 +170,18 @@ Status: built 2026-11-12 at the owner's explicit request, which lifts the featur
 
 Rejected: one technology-selection layer per discipline, which would recreate the context cost 0.4.0 removed; loading all disciplines on every run. Revisit if FS-016's planted-failure cases show no gain over 0.4.0, or if the screen raises disciplines on cases that should stay quiet.
 
+## D-021: Enforce the assurance screen and resolve it by rules (package 0.6.0)
+
+Status: built 2026-11-12 at the owner's explicit request, which lifts the freeze for FS-027 and FS-028; unevaluated. Evidence: [field report 3](research/field-report-2026-11-12-mochios-3.md) (G1, G3) and [FS-015](../evals/results/fs015-2026-11-12.md): the screen was skipped or applied after the code in both live builds.
+
+- **Resolver.** `scripts/assurance.py screen` takes an answer for every screen question (unknown counts as yes) and resolves the disciplines and tiers by forward closure over Horn rules in `rules/assurance.json`: question → discipline, discipline → required discipline (privacy → security, performance → observability), raised and `--high` → tier 2, build → verification. Each discipline lists every answer that raised it. The shape comes from the owner's HITCH prototype (capabilities as rule modules over facts, load only what the goal needs); at fourteen questions a plain fixpoint suffices. A test keeps the flow's table and the rules file identical.
+- **Two capability questions** join the screen: runs untrusted code or content, and reads secrets or confidential files. They target the implicit risks FS-016 case (3) measures; that case now tests whether the model answers them correctly rather than whether it infers them unprompted.
+- **`assurance.py check`** reports raised disciplines without a row, rows without a check, duplicate IDs, and untested tier 2 rows.
+- **Guard enforcement.** A run declares `--assurance DESIGN.md` or `--routine` (at `start`, or later with `declare`). `close` and the Stop hook refuse while nothing is declared or while an assurance row (other than documented evidence) has no executed check whose criterion names its ID. `--accept-blockers` still finishes with the gaps reported.
+- **Handoff query.** `run_guard.py report --all` lists every recorded run (state, criteria passing and failing, last check), the use field report 3 found for the log.
+
+Rejected: refusing `start` without a declaration, which would block routine edits before any work; deriving tiers from free-text `tier2_when` lists. Revisit if FS-016 shows `--routine` used to skip the screen on non-routine work, or the extra questions raise rigor where the screen should stay quiet.
+
 ## Inspected predecessor baseline (0.1.0)
 
 Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its local checkout had no resolvable HEAD during inspection, and the public repository's only 1.3.0 state before that date is `1e96a46360515db8774ba872d1d891e8209860ab`, which the links above pin. These identify inspected baselines, not a claim that either working tree was clean.

@@ -8,11 +8,18 @@ start   record the starting state and this worker's write set; refuse a write
 exec    run a check command and record its exit code and output tail
 check   list files the run changed; flag changes outside the write set and
         changes to edits that existed before the run
-report  print changed files, violations, and executed checks as Markdown
+        Declare the run's assurance table with --assurance DESIGN.md, or say
+        the run is a routine edit with --routine (or later with declare)
+declare set or change the run's assurance declaration
+report  print changed files, violations, and executed checks as Markdown;
+        --all lists every recorded run (handoff: which work was verified)
 finish  close the run so its write set no longer blocks other workers
 hook    opt-in host hook (Claude Code PreToolUse/Stop): reads the event JSON
         on stdin, blocks an edit outside the open run's write set, and blocks
-        stopping while the run has violations or no recorded checks
+        stopping while the run has violations, no recorded checks, or an
+        assurance row without an executed check
+close   check, report, and finish; refuses while scope, checks, or
+        assurance have problems unless --accept-blockers
 
 Run records live under the repository's common git directory, so worktrees
 of one repository see each other's open runs. Standard library only.
@@ -25,12 +32,16 @@ import fnmatch
 import hashlib
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
 import time
 import uuid
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from assurance import parse_table  # noqa: E402  (sibling script, standard library only)
 
 STALE_HOURS = 24
 
@@ -203,6 +214,76 @@ def save(path, record):
     path.write_text(json.dumps(record, indent=2), encoding="utf-8")
 
 
+def assurance_declaration(root, args):
+    """None (undeclared), "routine", or {"file": path} for the design holding the assurance table."""
+    if getattr(args, "routine", False):
+        return "routine"
+    if getattr(args, "assurance", None):
+        path = Path(args.assurance)
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        if not path.exists():
+            raise SystemExit(f"run_guard: assurance file not found: {args.assurance}")
+        try:
+            return {"file": path.resolve().relative_to(root.resolve()).as_posix()}
+        except ValueError:
+            return {"file": str(path.resolve())}
+    return None
+
+
+def mentions(criterion, row_id):
+    return bool(criterion) and re.search(rf"(?<![\w-]){re.escape(row_id)}(?!\w)", criterion) is not None
+
+
+def assurance_gaps(root, record):
+    """Problems with the run's assurance: undeclared, unreadable, or rows with no executed check.
+    Field report 3 (G1): the screen was skipped or applied after the code in both live builds."""
+    declared = record.get("assurance")
+    if declared == "routine":
+        return []
+    if not declared:
+        return ["no assurance declared: run_guard.py declare --assurance DESIGN.md "
+                "(the file with the assurance table), or --routine for a routine edit"]
+    path = Path(declared["file"])
+    if not path.is_absolute():
+        path = root / path
+    try:
+        _tiers, rows = parse_table(path.read_text(encoding="utf-8-sig"))
+    except OSError:
+        return [f"assurance file unreadable: {declared['file']}"]
+    if not rows:
+        return [f"no assurance rows (| A-1 | ... |) in {declared['file']}"]
+    gaps = []
+    for row in rows:
+        if row["evidence"] == "documented":
+            continue
+        if not any(mentions(c.get("criterion"), row["id"]) for c in record["checks"]):
+            gaps.append(f"assurance {row['id']} ({row['discipline']}) has no executed check; "
+                        f"name the ID in a criterion, e.g. --each \"{row['id']} <claim> :: <command>\"")
+    return gaps
+
+
+def describe_assurance(record):
+    declared = record.get("assurance")
+    if declared == "routine":
+        return "routine edit (no assurance table)"
+    if not declared:
+        return "not declared"
+    return f"table in `{declared['file']}`"
+
+
+def cmd_declare(args):
+    root = repo_root()
+    path, record = load(runs_dir(root), args.run)
+    record["assurance"] = assurance_declaration(root, args)
+    if record["assurance"] is None:
+        print("run_guard: give --assurance DESIGN.md or --routine.", file=sys.stderr)
+        return 2
+    save(path, record)
+    print(f"run {record['id']} assurance: {describe_assurance(record)}")
+    return 0
+
+
 def cmd_start(args):
     root = repo_root()
     runs = runs_dir(root)
@@ -211,6 +292,7 @@ def cmd_start(args):
     if not write_set:
         print("run_guard: declare the write set (--write-set or --shared PATTERN ...).", file=sys.stderr)
         return 2
+    declared = assurance_declaration(root, args)
     dirty = dirty_files(root)
     adopted = {p.replace("\\", "/") for p in args.adopt}
     outside_edits = [p for p in dirty if in_write_set(p, write_set) and p not in adopted
@@ -254,12 +336,17 @@ def cmd_start(args):
         "shared_snapshots": snapshots,
         "dirty_at_start": {p: digest(root / p) for p in dirty if p not in adopted},
         "adopted": sorted(adopted),
+        "assurance": declared,
         "checks": [],
         "finished": False,
     }
     save(runs / f"{run_id}.json", record)
     pointer(runs, root).write_text(run_id, encoding="utf-8")
     print(f"run {run_id} started; write set: {', '.join(write_set)}; {len(dirty)} pre-existing uncommitted paths recorded")
+    if declared is None:
+        print("note: no assurance declared. Beyond a routine edit, screen first (flows/assurance.md), then "
+              "run_guard.py declare --assurance DESIGN.md; for a routine edit, declare --routine. "
+              "close refuses until one is declared.")
     return 0
 
 
@@ -377,6 +464,10 @@ def cmd_close(args):
     if failed:
         print("\nFailing checks: " + "; ".join(failed))
         problems = 1
+    gaps = assurance_gaps(root, record)
+    if gaps:
+        print("\nAssurance gaps: " + "; ".join(gaps))
+        problems = 1
     if problems and not args.accept_blockers:
         print("\n[run_guard] run left open: fix the problems above, or report them as blockers "
               "and rerun close with --accept-blockers.")
@@ -401,7 +492,56 @@ def cmd_check(args):
     return 1 if outside or touched else 0
 
 
+def run_summary(record):
+    latest = {}
+    for c in record.get("checks", []):
+        latest[c.get("criterion") or c["command"]] = c
+    passed = sum(1 for c in latest.values() if c["exit"] == 0)
+    last = record["checks"][-1] if record.get("checks") else None
+    if record.get("finished"):
+        state = "closed"
+    elif time.time() - record["started"] > STALE_HOURS * 3600:
+        state = "stale"
+    else:
+        state = "open"
+    return {
+        "id": record["id"], "label": record.get("label") or "", "state": state,
+        "started": time.strftime("%Y-%m-%d %H:%M", time.localtime(record["started"])),
+        "write_set": len(record.get("write_set", [])), "passing": passed, "failing": len(latest) - passed,
+        "last": f"{last.get('criterion') or last['command']} (exit {last['exit']})" if last else "none",
+    }
+
+
+def cmd_report_all(args):
+    """One row per recorded run, newest first: lets a new session tell verified work from
+    unverified work without trusting memory (field report 3; FS-028)."""
+    runs = runs_dir(repo_root())
+    records = []
+    for path in runs.glob("*.json"):
+        try:
+            records.append(json.loads(path.read_text(encoding="utf-8")))
+        except (json.JSONDecodeError, OSError):
+            continue
+    records.sort(key=lambda r: r.get("started", 0), reverse=True)
+    if args.limit:
+        records = records[:args.limit]
+    rows = [run_summary(r) for r in records]
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return 0
+    print("| Run | Label | Started | State | Write-set entries | Criteria passing / failing | Last check |")
+    print("|---|---|---|---|---|---|---|")
+    for r in rows:
+        print(f"| {r['id']} | {r['label']} | {r['started']} | {r['state']} | {r['write_set']} | "
+              f"{r['passing']} / {r['failing']} | {r['last']} |")
+    if not rows:
+        print("| none recorded | | | | | | |")
+    return 0
+
+
 def cmd_report(args):
+    if getattr(args, "all", False):
+        return cmd_report_all(args)
     root = repo_root()
     _, record = load(runs_dir(root), args.run)
     changed, touched, outside = changes(root, record)
@@ -410,6 +550,7 @@ def cmd_report(args):
     print("Changed files: " + (", ".join(f"`{p}`" for p in changed) or "none"))
     problems = [f"outside the write set: `{p}`" for p in outside] + [f"changed a pre-existing edit: `{p}`" for p in touched]
     print("\nScope violations: " + ("; ".join(problems) or "none"))
+    print(f"\nAssurance: {describe_assurance(record)}")
     print("\n| Check | Criterion | Exit | Seconds |\n|---|---|---|---|")
     for c in record["checks"]:
         print(f"| `{c['command']}` | {c['criterion'] or ''} | {c['exit']} | {c['seconds']} |")
@@ -483,11 +624,19 @@ def cmd_hook(args):
         problems = [f"outside the write set: {p}" for p in outside] + [f"changed an outside edit: {p}" for p in touched]
         if not record["checks"]:
             problems.append("no checks were run through run_guard.py checks or exec")
+        problems += assurance_gaps(root, record)
         if problems:
             print("run_guard: the open run is not ready to close: " + "; ".join(problems)
                   + ". Fix these, or report them as blockers and run run_guard.py close --accept-blockers.", file=sys.stderr)
             return 2
     return 0
+
+
+def add_assurance_flags(p):
+    group = p.add_mutually_exclusive_group()
+    group.add_argument("--assurance", metavar="DESIGN.md",
+                       help="file with the assurance table; each row ID must appear in an executed check's criterion")
+    group.add_argument("--routine", action="store_true", help="a routine edit with no assurance table")
 
 
 def main(argv=None):
@@ -501,6 +650,10 @@ def main(argv=None):
                    help="files other workers may also edit; their uncommitted hunks are protected")
     p.add_argument("--adopt", nargs="+", action="extend", default=[], metavar="PATH",
                    help="uncommitted paths the user confirmed belong to this work")
+    add_assurance_flags(p)
+    p = sub.add_parser("declare", help="set the run's assurance declaration")
+    p.add_argument("--run")
+    add_assurance_flags(p)
     p = sub.add_parser("exec")
     p.add_argument("--run")
     p.add_argument("--criterion", help="acceptance criterion this check evidences")
@@ -514,8 +667,13 @@ def main(argv=None):
                         "own quoting (powershell -Command, sh -c) in a script file, or use --plan")
     p.add_argument("--plan", help="JSON list of {criterion, command}; an argv array is passed unchanged")
     p.add_argument("--tail", type=int, default=20)
-    for name in ("check", "report", "finish"):
+    for name in ("check", "finish"):
         sub.add_parser(name).add_argument("--run")
+    p = sub.add_parser("report", help="report this run, or --all runs")
+    p.add_argument("--run")
+    p.add_argument("--all", action="store_true", help="one row per recorded run, newest first")
+    p.add_argument("--limit", type=int, default=0)
+    p.add_argument("--json", action="store_true")
     p = sub.add_parser("close", help="check, report, and finish in one call")
     p.add_argument("--run")
     p.add_argument("--accept-blockers", action="store_true",
@@ -524,7 +682,7 @@ def main(argv=None):
     p.add_argument("--require-run", action="store_true",
                    help="block edits in a git repository when no guarded run is open")
     args = parser.parse_args(argv)
-    return {"start": cmd_start, "exec": cmd_exec, "checks": cmd_checks, "check": cmd_check,
+    return {"start": cmd_start, "declare": cmd_declare, "exec": cmd_exec, "checks": cmd_checks, "check": cmd_check,
             "report": cmd_report, "finish": cmd_finish, "close": cmd_close, "hook": cmd_hook}[args.cmd](args)
 
 
