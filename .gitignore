@@ -5,3 +5,4 @@ evals/ab/results/*/*/work/.claude/
 
 # Raw smoke-test transcripts list account integrations; keep local
 evals/results/plugin-smoke-*/*.jsonl
+evals/results/fs015-*/*.jsonl
