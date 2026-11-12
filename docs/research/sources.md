@@ -55,3 +55,79 @@ Register for the [research report](foundations.md). Access checked on 2026-09-09
 25. **Wayland project (undated).** [Wayland Architecture](https://wayland.freedesktop.org/architecture.html). Official engineering documentation. Input-to-render path and client/compositor responsibilities; some implementation details are historical and need fresh verification before backend selection.
 
 26. **Fuchsia project (updated 2025-02-28).** [Flatland](https://fuchsia.dev/fuchsia-src/concepts/ui/scenic/flatland). Official documentation. Independent scene submissions and system composition. Architectural precedent, not evidence of portability to a different kernel or graphics environment.
+
+## Sources for the modular redesign (2026-11-12)
+
+Register for [modular-redesign.md](modular-redesign.md). Access checked on 2026-11-12. "Full text", "abstract", "landing page", or "not accessed" states what was actually read; claims in the report stay within that. Sources marked not accessed are cited only for a well-known method definition.
+
+27. **Anthropic (accessed 2026-11-12).** [Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices). Official vendor documentation, full text. Recommendations (body under 500 lines, references one level deep, scripts for fragile operations, evaluations across models); no reported measurements.
+
+28. **Anthropic (2025-10-16).** [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills). Engineering blog, full text. Three-level progressive disclosure; design claims, not measurements.
+
+29. **Jeremy Hadfield, Barry Zhang, Kenneth Lien, Florian Scholz, Jeremy Fox, and Daniel Ford (2025-06-13).** [How we built our multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system). Engineering blog, full text. Internal evaluation: 90.2% over single-agent Opus 4; token usage explains 80% of variance (with tool calls and model choice, 95% on BrowseComp); about 4× tokens for agents and 15× for multi-agent versus chat; dependency-heavy domains a poor fit. Vendor-internal benchmark, not independently replicated.
+
+30. **Gloaguen et al. (2026).** [Evaluating AGENTS.md: Are Repository-Level Context Files Helpful for Coding Agents?](https://arxiv.org/abs/2602.11988) arXiv:2602.11988v3. Abstract only; author name from the search index, not confirmed on the page. Context files do not generally improve success and raise cost over 20%; instructions are followed; overviews unhelpful. Task counts not stated in the abstract.
+
+31. **Jai Lal Lulla, Seyedmoein Mohsenimofidi, Matthias Galster, Jie M. Zhang, Sebastian Baltes, and Christoph Treude (2026).** [On the Impact of AGENTS.md Files on the Efficiency of AI Coding Agents](https://arxiv.org/abs/2601.20404). arXiv:2601.20404v2, March 30. Abstract only. 10 repositories, 124 pull requests; median runtime Δ 28.64%, output tokens Δ 16.58%, comparable completion. Output tokens only.
+
+32. **Authors not recorded (2026).** [Do Context Files Help Coding Agents? A Two-Agent Ablation Study on Real Repositories](https://arxiv.org/abs/2607.27250). arXiv:2607.27250. Abstract only. Claude Code and Codex, 17 tasks from 3 repositories, 288 runs; correctness effect bounded to at most 10–15pp; failures in implementation skill. Small task set.
+
+33. **Authors not recorded (2026).** [Instruction Adherence in Coding Agent Configuration Files: A Factorial Study of Four File-Structure Variables](https://arxiv.org/abs/2605.10039). arXiv:2605.10039. Abstract only. 1,650 Claude Code sessions, two TypeScript codebases; no detectable structural effect; compliance odds about 5.6% lower per additional generated function (post hoc).
+
+34. **Daniel Jaroslawicz, Brendan Whiting, Parth Shah, and Karime Maamari (2025).** [How Many Instructions Can LLMs Follow at Once?](https://arxiv.org/abs/2507.11538) arXiv:2507.11538v1. Abstract only. IFScale; 20 models; best reaches 68% accuracy at 500 instructions. Synthetic keyword-inclusion task, not coding.
+
+35. **Authors not recorded (2026).** [A Systematic Survey of Agentic Skills: Architecture, Lifecycle, and Security](https://arxiv.org/abs/2608.29596). arXiv:2608.29596v2. Abstract only. Nine-stage skill lifecycle; survey, no experiments.
+
+36. **Mert Cemri, Melissa Z. Pan, Shuyi Yang, et al. (2025).** [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657) arXiv:2503.13657v3, revised October 26. Abstract only. 14 failure modes in 3 categories; taxonomy from 150 traces (κ = 0.88); 1,600+ traces over 7 frameworks. Intervention figures from earlier versions not used.
+
+37. **Hangfan Zhang, Zhiyao Cui, Jianhao Chen, et al. (2025).** [Stop Overvaluing Multi-Agent Debate](https://arxiv.org/abs/2502.08788). arXiv:2502.08788v3. Position paper, abstract only. 5 methods, 9 benchmarks, 4 models; debate often fails to beat chain-of-thought and self-consistency; argues for model heterogeneity.
+
+38. **Yongjin Yang, Euiin Yi, Jongwoo Ko, Kimin Lee, Zhijing Jin, and Se-Young Yun (2025).** [Revisiting Multi-Agent Debate as Test-Time Scaling](https://arxiv.org/abs/2505.22960). arXiv:2505.22960v2, preprint under review. Abstract only. Limited advantage over single-agent scaling on math; more on harder problems and weaker models; little benefit from diversity; safety risk. Disagrees with [37] on diversity.
+
+39. **Saaket Agashe, Yue Fan, Anthony Reyna, and Xin Eric Wang (2025).** [LLM-Coordination: Evaluating and Analyzing Multi-agent Coordination Abilities in Large Language Models](https://aclanthology.org/2025.findings-naacl.448/). *Findings of NAACL 2025*, 8053–8072. Landing page and abstract. Agents struggle when decisions depend on partners' beliefs and intentions; game environments, not software design.
+
+40. **Durward K. Sobek II, Allen C. Ward, and Jeffrey K. Liker (1999).** [Toyota's Principles of Set-Based Concurrent Engineering](https://sloanreview.mit.edu/article/toyotas-principles-of-setbased-concurrent-engineering). *MIT Sloan Management Review*, Winter 1999. Opening only (paywall) plus indexed abstract; the first two principles come from the abstract, the third is not reported. Manufacturing case study; no software or LLM evidence.
+
+41. **Rick Kazman, Jai Asundi, and Mark Klein (2002).** [Making Architecture Design Decisions: An Economic Approach](https://apps.dtic.mil/sti/tr/pdf/ADA408740.pdf). CMU/SEI-2002-TR-035. Search summaries and catalog records; full text not read. CBAM: cost-benefit ranking of architectural strategies from ATAM quality scenarios; decision support.
+
+42. **Kevin J. Sullivan, William G. Griswold, Yuanfang Cai, and Ben Hallen (2001).** [The Structure and Value of Modularity in Software Design](https://libraopen.lib.virginia.edu/public_view/q237hr920). *ESEC/FSE-9*, 99–108. DOI: 10.1145/503209.503224. Abstract and citing works. Design structure matrices plus real options; consistent with Parnas on KWIC.
+
+43. **Carliss Y. Baldwin and Kim B. Clark (2000).** *Design Rules, Volume 1: The Power of Modularity*. MIT Press. Not accessed; cited for the option-value framing that [42] adapts.
+
+44. **Kyo C. Kang, Sholom G. Cohen, James A. Hess, William E. Novak, and A. Spencer Peterson (1990).** [Feature-Oriented Domain Analysis (FODA) Feasibility Study](https://www.sei.cmu.edu/library/feature-oriented-domain-analysis-foda-feasibility-study/). CMU/SEI-90-TR-021. Landing page only. Origin of feature models; requires/excludes constraint checking is later product-line practice.
+
+45. **Michael Nygard (2011-11-15).** [Documenting Architecture Decisions](https://www.cognitect.com/blog/2011/11/15/documenting-architecture-decisions). Practitioner blog, full text. ADR sections: Title, Context, Decision, Status, Consequences.
+
+46. **Dan McKinley (2015-03-30).** [Choose Boring Technology](https://mcfunley.com/choose-boring-technology). Practitioner essay, full text. "About three innovation tokens"; experience, not a study.
+
+47. **Lee D. Erman, Frederick Hayes-Roth, Victor R. Lesser, and D. Raj Reddy (1980).** The Hearsay-II Speech-Understanding System. *ACM Computing Surveys* 12(2), 213–253. Not accessed; cited for the blackboard architecture definition.
+
+48. **Filip Naudot, Tobias Sundqvist, and Timotheus Kampik (2025).** [llmSHAP: A Principled Approach to LLM Explainability](https://arxiv.org/abs/2511.01311). arXiv:2511.01311v1. Abstract only. When Shapley principles hold under stochastic LLM inference; speed versus fidelity trade-offs.
+
+49. **Lloyd S. Shapley (1953).** A Value for n-Person Games. In *Contributions to the Theory of Games II*, Annals of Mathematics Studies 28, 307–317. Not accessed; cited for the definition.
+
+50. **Leonard J. Savage (1951).** The Theory of Statistical Decision. *Journal of the American Statistical Association* 46(253), 55–67. Not accessed; cited for the minimax-regret criterion.
+
+51. **Reid G. Smith (1980).** The Contract Net Protocol: High-Level Communication and Control in a Distributed Problem Solver. *IEEE Transactions on Computers* C-29(12), 1104–1113. Not accessed; cited as a pattern not adopted.
+
+Leads for the modular redesign, located but not used for claims: [MAFBench, arXiv:2602.03128](https://arxiv.org/abs/2602.03128) (framework architecture affects multi-agent performance); [CoopEval, arXiv:2604.15267](https://arxiv.org/pdf/2604.15267); [TERMS-Bench, arXiv:2605.13909](https://arxiv.org/abs/2605.13909); [PACT bargaining benchmark](https://github.com/lechmazur/pact/); [Probe-and-Refine guidance tuning, arXiv:2606.20512](https://arxiv.org/pdf/2606.20512).
+
+## Sources for optimization (2026-11-12)
+
+Register for [optimization.md](optimization.md). Access checked on 2026-11-12. Sources [27]–[29] and [34] above are also used.
+
+52. **Huiqiang Jiang, Qianhui Wu, Chin-Yew Lin, Yuqing Yang, and Lili Qiu (2023).** [LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models](https://arxiv.org/abs/2310.05736). *EMNLP 2023*. Abstract only. "Up to 20x compression with little performance loss" on GSM8K, BBH, ShareGPT, and Arxiv-March23. Not tested on agent instructions.
+
+53. **An Empirical Study on Prompt Compression for Large Language Models (2025).** [arXiv:2505.00019](https://arxiv.org/abs/2505.00019). Search summary only; authors not recorded. LLMLingua variants lead at high ratios; long-context performance degrades past an optimum ratio. Used only to support the degradation caveat.
+
+54. **Tobias Lindenbauer, Igor Slinko, Ludwig Felder, Egor Bogomolov, and Yaroslav Zharov (2025).** [The Complexity Trap: Simple Observation Masking Is as Efficient as LLM Summarization for Agent Context Management](https://arxiv.org/abs/2508.21433). arXiv:2508.21433v3; DL4C workshop at NeurIPS 2025. Abstract only, plus a vendor blog for tuning notes. SWE-agent on SWE-bench Verified, five model configurations: masking "halves cost relative to the raw agent" while matching or slightly exceeding summarization's solve rate; hybrid saves a further 7% and 11%.
+
+55. **Anthropic (accessed 2026-11-12).** [Prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching). Official documentation; first ~40,000 characters read verbatim, the rest only summarized. Cache reads 0.1× base input (0.05× on Opus 5.5 and Sonnet 5.5; 0.025× on Fable/Mythos 5.1 and 5.2); writes 1.25× (5-minute) and 2× (1-hour); prefix order tools, system, messages; minimum cacheable length 512 tokens on Haiku 5.5. Prices change; recheck before projecting costs.
+
+56. **Lingjiao Chen, Matei Zaharia, and James Zou (2023).** [FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance](https://arxiv.org/abs/2305.05176). arXiv:2305.05176v1. Abstract only. Cascade matches GPT-4 "with up to 98% cost reduction" or improves accuracy 4% at equal cost. Benchmark-specific upper bound; 2023 models.
+
+57. **Isaac Ong, Amjad Almahairi, Vincent Wu, Wei-Lin Chiang, Tianhao Wu, Joseph E. Gonzalez, M Waleed Kadous, and Ion Stoica (2024).** [RouteLLM: Learning to Route LLMs with Preference Data](https://arxiv.org/abs/2406.18665). arXiv:2406.18665v4. Abstract only. Costs reduced "by over 2 times in certain cases" without compromising response quality; chat benchmarks, not agentic work.
+
+58. **Lakshya A Agrawal, Shangyin Tan, Dilara Soylu, et al. (2025).** [GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](https://arxiv.org/abs/2507.19457). *ICLR 2026* (oral). Abstract only. Beats GRPO by 6% on average (up to 20%) "using up to 35x fewer rollouts"; beats MIPROv2 by over 10%. No prompt-length claim in the abstract; length behavior comes from unverified practitioner reports.
+
+59. **Donald J. Schuirmann (1987).** A Comparison of the Two One-Sided Tests Procedure and the Power Approach for Assessing the Equivalence of Average Bioavailability. *Journal of Pharmacokinetics and Biopharmaceutics* 15(6), 657–680. Not accessed; cited for the two one-sided tests (TOST) equivalence procedure.

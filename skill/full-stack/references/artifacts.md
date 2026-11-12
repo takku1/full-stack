@@ -30,7 +30,7 @@ Include identity/correlation, retries/duplicates, cancellation, timeouts, event 
 
 ## Decision record
 
-Record the question, constraints, evidence, viable alternatives, choice, sacrificed qualities, fit gap, and revisit condition. Keep a decision that is unresolved visibly unresolved. If a choice is fixed by the user, record its origin and investigate integration constraints instead of reopening the selection.
+Record the question, constraints, evidence, viable alternatives, choice, sacrificed qualities, fit gap, and revisit condition. Keep a decision that is unresolved visibly unresolved. For technology choices made through the stack flow, use the [layer decision record](../templates/decision-record.md), which adds candidates, regret, and neighbor assumptions. If a choice is fixed by the user, record its origin and investigate integration constraints instead of reopening the selection.
 
 ## Traceability table
 

@@ -140,6 +140,17 @@ Neither selects an implementation for a custom Rust OS. Candidate dependencies s
 
 The MochiOS apps bar is consequently a useful worked example, not effectiveness evidence. Visible controls can be traced through application identity, lifecycle, surface presentation, and authority. Existing owners must be established from the current repository before proposing replacements.
 
+## 17. Choose technologies and coordinate specialists (added 2026-11-12)
+
+This synthesis originally left technology selection to per-decision research (section 14). The modular redesign (D-017) needs more: methods for choosing within a layer and for keeping coupled layer choices consistent. The [modular redesign report](modular-redesign.md) covers this with sources [27]–[51]. In short:
+
+- Instruction volume adds cost without reliable gains, so the always-loaded core stays small and layer guidance loads on demand. ([30]–[34] measured; FS-009 internal.)
+- Multi-agent systems help parallel, independent work. They hurt where agents depend on each other, and most of their failures are specification and misalignment problems ([29], [36]). Coupled layer choices are therefore made jointly by one orchestrator.
+- Set-based concurrent engineering ([40]) gives a precedent for integrating subsystems by intersecting feasible sets. CBAM ([41]), ADRs ([45]), boring-technology budgets ([46]), feature-model constraints ([44]), and modularity as option value ([42], [43]) shape each layer's decision method.
+- Game theory contributes three things. The coordination-game framing explains why the choice must be joint. Minimax regret ([50]) handles uncertain futures. Shapley values ([48], [49]) can attribute value to modules during evaluation. Mechanism design and negotiation do not apply, because layer modules share one principal and one model.
+
+These are precedents and proposals; none was tested on per-layer selection by an LLM.
+
 ## Proposed design method
 
 The synthesis is an iterative sequence of framing, grounding, elaborating, allocating, resolving, specifying, and sequencing. These verbs are a project convention. A run can return to an earlier activity when evidence changes; a small request should not trigger a full-system audit.
@@ -161,6 +172,8 @@ The synthesis favors a compact design method over adopting every cited framework
 Important disagreements remain bounded rather than eliminated. Information hiding can increase interface overhead. End-to-end semantics can require shared lower-level enforcement. A bounded model context need not match a process. Risk-driven research can conflict with a request for exhaustive exploration; the task's explicit scope determines which is appropriate. These tensions belong in decision rationale when they affect the selected design.
 
 The next empirical questions are whether explicit term distinctions reduce semantic errors; whether interaction review finds otherwise omitted prerequisites; whether scope classification prevents optional-feature inflation; and whether the resulting handoff supports implementation with fewer architectural guesses. Comparison should include the unassisted baseline, each predecessor, and Full Stack under comparable inputs and budgets. A confident model assessment is insufficient evidence for those claims.
+
+The modular redesign adds five questions, listed in the [redesign report](modular-redesign.md#open-questions). Does a small core match the brief on small tasks? Does two-pass set narrowing beat a single pass? How accurate is mechanical compatibility checking? Which layer modules have positive marginal value? Does research fan-out justify its token cost?
 
 ## Sources
 

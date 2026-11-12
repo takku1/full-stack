@@ -63,6 +63,23 @@ Use this vocabulary to prevent consequential ambiguity. These are operational de
 | Migration | Changes connecting current and target states while respecting constraints | Temporary adapters need explicit removal conditions |
 | Fit gap | Required behavior a candidate solution does not supply | Generates owned integration/custom work only if in scope |
 
+## Stack selection
+
+Used by the [stack flow](../flows/stack.md). A layer here is a decision area, not a deployment tier or directory.
+
+| Term | Meaning here | Important distinction |
+|---|---|---|
+| Layer | Area of technology decisions with its own criteria (data, runtime, interface, client, platform, crosscut, or a named custom layer) | Not a team, process, or folder; a project may define its own |
+| Stack brief | Outcome, quality scenarios, constraints, futures, innovation budget, and layer statuses, written once by the orchestrator | Layers read it; only the orchestrator edits it |
+| Quality scenario | Observable quality target: stimulus, environment, response, measure | "Fast" is not a scenario; unstated targets are labeled proposed |
+| Candidate set | Two or three options for one layer, each with evidence, `provides`, `assumes`, and novelty | Proposals for intersection, not a decision |
+| Neighbor assumption | Tag a layer choice needs another layer to `provide` | An unmet assumption is a mismatch, or a conditional choice with a recorded blocker |
+| Joint profile | One choice per layer, committed together by the orchestrator | Layers never commit their own optimum independently |
+| Future | Plausible change used to compute regret (tenfold load, team handover) | A planning lens, not a requirement to build for |
+| Regret | How far a choice falls short of the best surviving choice in one future | Minimax regret breaks ties after scenario fit; it does not override it |
+| Innovation budget | Number of choices the team has not run in production that a profile may include | A spent token needs a scenario that justifies it |
+| Keep current | Layer status: the existing choice meets the outcome | The default in an existing repository; reopening needs evidence |
+
 ## Relation vocabulary
 
 Use only the distinctions useful to the task; stable IDs are helpful once several artifacts refer to the same element.

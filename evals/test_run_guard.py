@@ -1,5 +1,6 @@
 """Exercise skill/full-stack/scripts/run_guard.py against throwaway git repositories."""
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -36,6 +37,47 @@ class RunGuardTest(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_checks_runs_all_in_one_call(self):
+        guard(self.repo, "start", "--write-set", "src/")
+        ok = f'"{sys.executable}" -c "print(1)"'
+        bad = f'"{sys.executable}" -c "raise SystemExit(4)"'
+        code, out = guard(self.repo, "checks", "--each", f"prints :: {ok}", "--each", f"fails :: {bad}")
+        self.assertEqual(code, 1, out)
+        self.assertIn("1/2 checks passed", out)
+        code, out = guard(self.repo, "report")
+        self.assertIn("| prints | 0 |", out)
+        self.assertIn("| fails | 4 |", out)
+
+    def test_checks_accepts_json_plan_and_rejects_bad_each(self):
+        guard(self.repo, "start", "--write-set", "src/")
+        plan = Path(self.tmp.name) / "plan.json"
+        plan.write_text(json.dumps([{"criterion": "c1", "command": [sys.executable, "-c", "print(2)"]}]))
+        code, out = guard(self.repo, "checks", "--plan", str(plan))
+        self.assertEqual(code, 0, out)
+        code, out = guard(self.repo, "checks", "--each", "no separator")
+        self.assertEqual(code, 2, out)
+
+    def test_close_finishes_clean_run_and_holds_dirty_one(self):
+        guard(self.repo, "start", "--write-set", "src/a.py")
+        (self.repo / "src" / "a.py").write_text("a = 5\n")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)  # no checks recorded
+        self.assertIn("run left open", out)
+        guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "print(3)")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+        self.assertIn("finished", out)
+        code, out = guard(self.repo, "start", "--write-set", "src/a.py", "--adopt", "src/a.py")  # closed run no longer collides
+        self.assertEqual(code, 0, out)
+
+    def test_close_accept_blockers_finishes_with_violation(self):
+        guard(self.repo, "start", "--write-set", "src/a.py")
+        (self.repo / "README.md").write_text("out of scope\n")
+        guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "print(4)")
+        code, out = guard(self.repo, "close", "--accept-blockers")
+        self.assertEqual(code, 1, out)
+        self.assertIn("finished with reported blockers", out)
 
     def test_clean_run_within_write_set(self):
         code, out = guard(self.repo, "start", "--write-set", "src/a.py", "--label", "WP-1")

@@ -36,7 +36,27 @@ Each session runs with an empty `CLAUDE_CONFIG_DIR` in the system temp folder, w
 
 ## Packaging checks
 
-Run `python evals/check_artifacts.py` and `python evals/test_run_guard.py` from the project root. The first checks that the entrypoint header parses as YAML, local Markdown links, JSON fixtures, required skill files, portable-reference containment, and unresolved scaffold markers. It does not assess architectural semantics.
+Run `python evals/check_artifacts.py`, `python evals/test_run_guard.py`, and `python evals/test_check_stack.py` from the project root. The first checks:
+
+- the entrypoint header parses as YAML;
+- the layer modules share one frontmatter interface with kebab-case tags;
+- the compatibility rules file is well-formed;
+- local Markdown links, JSON fixtures, and required skill files;
+- portable-reference containment and unresolved scaffold markers.
+
+The last exercises `scripts/check_stack.py` on rule violations, unmet and soft assumptions, the innovation budget, coverage, candidate-set intersection, and Markdown input. It also checks that the example in `flows/stack.md` is itself consistent. None of these assess architectural semantics or whether a chosen stack is good.
+
+## Stack selection evaluation (planned, FS-016)
+
+Greenfield cases give a brief with a known-sensible range of answers. Existing-repository cases check that "keep current" holds. Grade blind on:
+
+- coherence across layers;
+- justification against the quality scenarios;
+- awareness of regret across futures;
+- novelty the scenarios do not need;
+- scope honesty.
+
+Compare plain, brief, 0.3.0, and 0.4.0 at matched budgets. Module attribution (FS-017) uses sampled Shapley values over the layer modules rather than one-at-a-time ablation, which misses interactions. See the [research report](../docs/research/modular-redesign.md#6-game-theory-where-it-helps-and-where-it-does-not).
 
 The skill-creator `quick_validate.py` can additionally check the skill's frontmatter. Record the installed validator version/path and outcome when used. A successful structural check is not a successful behavioral experiment.
 

@@ -1,14 +1,22 @@
 # Full Stack
 
-Full Stack turns a bounded software request into a connected design across the relevant stack, then carries it through implementation when requested. It defines requirements, ownership, contracts, and ordered work from a prompt, roadmap slice, prototype, or existing repository. Research targets decisions that could change the design.
+Full Stack turns a bounded software request into a connected design across the relevant stack, then carries it through implementation when requested. It defines requirements, ownership, contracts, and ordered work from a prompt, roadmap slice, prototype, or existing repository. Research targets decisions that could change the design. When a technology must be chosen, it works layer by layer (data, runtime and scripting, interface, client, platform, cross-cutting concerns). One orchestrator keeps the choices consistent, and a script checks them.
 
-The method is **requirements elaboration and architectural synthesis with traceability**. Package release 0.3.0 (see [ROADMAP.md](ROADMAP.md) for open work). This is a research-informed instruction skill, not an agent runtime or an academically validated method; comparative improvement remains unestablished.
+The method is **requirements elaboration and architectural synthesis with traceability**. Package release 0.4.0, the modular layer redesign ([D-017](docs/design-decisions.md#d-017-modular-layer-orchestration-package-040); see [ROADMAP.md](ROADMAP.md) for open work and [docs/STATUS.md](docs/STATUS.md) for current state). 0.4.0 has passed its unit and packaging checks but has not yet been trialled or compared. This is a research-informed instruction skill, not an agent runtime or an academically validated method; comparative improvement remains unestablished.
 
 Start with the [project framing](docs/project-framing.md), then the [research report](docs/research/foundations.md). The [terminology](skill/full-stack/references/terminology.md) defines the concepts used throughout. The [MochiOS example](docs/examples/mochios-desktop.md) shows how a visual concept becomes a bounded architectural design.
 
 ## Install
 
-The package is the whole [skill/full-stack](skill/full-stack/SKILL.md) folder (entrypoint, references, notice), not `SKILL.md` alone. Install and reinstall with the scripts; a manual copy skips the conflict, backup, and hash checks.
+**Claude Code: install the plugin (recommended).** It bundles the skill, the run-guard hook (installed automatically, so no settings edit is needed), and the `stack-evidence` subagent on a small model:
+
+```text
+/plugin install full-stack --marketplace takku1/full-stack
+```
+
+(Older Claude Code: `/plugin marketplace add takku1/full-stack`, then `/plugin install full-stack@full-stack-skills`.) The plugin root is [skill/](skill/.claude-plugin/plugin.json), so the install contains only the package, not `docs/` or `evals/`. The skill is then invoked as `/full-stack:full-stack`. To try it from a checkout without installing, run `claude --plugin-dir ./skill`. The hook needs Python 3.8+ (any of `python3`, `python`, or `py -3`). Without Python it does nothing rather than blocking edits. Don't also install the skill with the scripts below, or Claude Code will see two copies.
+
+**Codex, or Claude Code without plugins: install the skill folder.** The package is the whole [skill/full-stack](skill/full-stack/SKILL.md) folder (core, flows, layer modules, templates, rules, references, scripts, notice), not `SKILL.md` alone. Install and reinstall with the scripts; a manual copy skips the conflict, backup, and hash checks.
 
 | Platform | Claude Code, user-wide | Claude Code, one project | Codex too |
 |---|---|---|---|
@@ -57,38 +65,60 @@ Most of this skill is instructions the model follows. These parts are checked me
 
 | Guarantee | Checked by | When |
 |---|---|---|
-| Header parses as YAML; flows are well-formed (values defined before use, every file touched is declared, nothing written before a question the user could dismiss) | SkillWren validator, `evals/check_artifacts.py` | Before release |
+| Header parses as YAML; layer modules share one interface; rules file is well-formed | `evals/check_artifacts.py` | Before release |
+| Layer choices satisfy the compatibility rules, every neighbor assumption, and the innovation budget | `scripts/check_stack.py check` (and `profiles` for candidate sets) | During design, when a technology is chosen |
 | Installed files equal this checkout | Installer SHA256 checks | Install |
-| Edits stay inside the work package's declared write set | `scripts/run_guard.py check` | During implement, in a git repository |
+| Edits stay inside the work package's declared write set | `scripts/run_guard.py close` (or `check`) | During implement, in a git repository |
 | Uncommitted edits made outside the run are not touched | `run_guard.py start` refuses them; `check` flags any change to them | Same |
 | Parallel workers do not claim overlapping files, including across git worktrees | `run_guard.py start` (exit 3 on overlap) | Same |
-| Reported checks were actually run, with their real exit codes | `run_guard.py exec` records them; `report` prints them | Same |
+| Reported checks were actually run, with their real exit codes | `run_guard.py checks` (all at once) or `exec` records them; `close` prints the report | Same |
 
-Everything else relies on the model following the instructions: when to ask, when scope is ambiguous, design quality, not inventing interfaces, and honest evidence when the guard cannot run. Header fields such as `authority`, `effects`, and `budget` are declarations; no host enforces them. Your host's permission mode is the only hard boundary on what the model can do. Whether the instructions help is measured by the [comparison harness](evals/README.md#ab-comparison-with-plain-claude-code). The [first run](evals/results/context-dose-2026-10-05.md) found that a 312-token brief scored best on small and medium tasks.
+Everything else relies on the model following the instructions: when to ask, when scope is ambiguous, design quality, not inventing interfaces, and honest evidence when the guard cannot run. `check_stack.py` catches mismatches between layers, not poor choices. Your host's permission mode is the only hard boundary on what the model can do. Whether the instructions help is measured by the [comparison harness](evals/README.md#ab-comparison-with-plain-claude-code). The [first run](evals/results/context-dose-2026-10-05.md) found that a 312-token brief scored best on small and medium tasks.
 
 `run_guard.py` needs Python 3 and git. It writes run records under the repository's git directory (`.git/full-stack-runs/`), never into the working tree. Files several workers must edit can be claimed with `--shared`: overlapping claims are then allowed, and uncommitted hunks that already exist when the run starts are protected line by line.
 
 ### Optional: make the host run the guard
 
-A skill cannot install host configuration, so by default the guard runs only when the model remembers to run it. To make Claude Code enforce it, add this to a project's `.claude/settings.json` (or your user settings), adjusting the script path:
+The plugin installs this hook for you ([skill/hooks/hooks.json](skill/hooks/hooks.json)). A bare skill cannot install host configuration, so with the script install the guard runs only when the model remembers to run it. To make Claude Code enforce it, add this to a project's `.claude/settings.json` (or your user settings), adjusting the path. `guard_hook.sh` finds a working Python and passes the event through:
 
 ```json
 {
   "hooks": {
     "PreToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit",
-      "hooks": [{ "type": "command", "command": "python ~/.claude/skills/full-stack/scripts/run_guard.py hook" }] }],
-    "Stop": [{ "hooks": [{ "type": "command", "command": "python ~/.claude/skills/full-stack/scripts/run_guard.py hook" }] }]
+      "hooks": [{ "type": "command", "command": "sh ~/.claude/skills/full-stack/scripts/guard_hook.sh" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "sh ~/.claude/skills/full-stack/scripts/guard_hook.sh" }] }]
   }
 }
 ```
 
-While a guarded run is open, the PreToolUse hook blocks any edit outside its write set and tells the model why. The Stop hook keeps the session going while the run has scope violations or no recorded checks. Add `--require-run` to the PreToolUse command to block all edits in a git repository until a run is started. With no open run and without that flag, the hook does nothing. The PreToolUse block was checked in a live headless Claude Code 2.1.289 session on 2026-10-05: the edit was refused, and the model reported the guard's reason. The Stop hook is covered by unit tests only. Edits made through shell commands bypass PreToolUse; the Stop check still catches them.
+While a guarded run is open, the PreToolUse hook blocks any edit outside its write set and tells the model why. The Stop hook keeps the session going while the run has scope violations or no recorded checks. Add `--require-run` to the PreToolUse command (`guard_hook.sh --require-run`) to block all edits in a git repository until a run is started. With no open run and without that flag, the hook does nothing. The PreToolUse block was checked in a live headless Claude Code 2.1.289 session on 2026-10-05: the edit was refused, and the model reported the guard's reason. The Stop hook is covered by unit tests only. Edits made through shell commands bypass PreToolUse; the Stop check still catches them.
 
-## Reading SKILL.md
+## How the package is organized
 
-The entrypoint is written in [SkillWren](docs/design-decisions.md#d-013-adopt-a-logic-first-entrypoint) structure: a header, a `contract` block of resources and invariants, and two `logic` blocks (`design`, `implement`). Nothing executes these blocks. The model reads them as ordered instructions, and the file's appendix defines every step in plain language. Claude Code and Codex read only `name` and `description` from the header. `version: 0.4.1` is the SkillWren format version, not this package's release.
+Every run loads only `SKILL.md`. It is a short set of rules (about the size of the brief that did best in [FS-009](evals/results/context-dose-2026-10-05.md)) and a routing table. Everything else loads when needed:
 
-Instruction size, approximate (characters / 4): the entrypoint is about 3,400 tokens (header ~400, body ~3,000). A substantial design also reads the artifact reference (~1,200) and others as needed; a build reads the implementation reference (~1,000). Questions and written files usually cost more than the instructions do.
+| Part | Loaded when | Approx. tokens (chars / 4) |
+|---|---|---|
+| [SKILL.md](skill/full-stack/SKILL.md) core | Always | ~640 (0.3.0 entrypoint: ~3,400) |
+| [flows/design.md](skill/full-stack/flows/design.md) | Any design beyond a routine edit | ~1,550 |
+| [flows/stack.md](skill/full-stack/flows/stack.md) + [templates](skill/full-stack/templates/stack-brief.md) | A layer needs a technology chosen or reopened | ~1,550 + ~650 |
+| [layers/](skill/full-stack/layers/data.md) `data`, `runtime`, `interface`, `client`, `platform`, `crosscut`, `custom` | Only for affected layers | ~350–700 each |
+| [flows/implement.md](skill/full-stack/flows/implement.md) | Building was requested | ~1,150 |
+| [references/](skill/full-stack/references/terminology.md) | As each flow step directs | unchanged from 0.3.0 |
+
+A greenfield design touching all six layers therefore loads about 7,900 tokens before references, more than 0.3.0. A routine edit loads about 640. Whether that trade pays off is what FS-016 measures.
+
+The flows keep the [SkillWren](docs/design-decisions.md#d-013-adopt-a-logic-first-entrypoint) `logic` blocks, which the model reads as ordered instructions; nothing executes them. The SkillWren header was removed from the entrypoint, because hosts read only `name` and `description` and the header cost about 400 tokens per run. The stack flow works like this:
+
+1. Write a stack brief: outcome, quality scenarios, futures, and an innovation budget.
+2. Each affected layer proposes two or three candidates. Each candidate declares the `provides` and `assumes` tags it brings.
+3. `check_stack.py profiles` intersects the candidate sets.
+4. The orchestrator commits one joint profile, choosing by scenario fit, then minimax regret, then novelty.
+5. The user authorizes costly commitments.
+6. Each affected layer writes a decision record.
+7. `check_stack.py check` must exit 0.
+
+In an existing repository every layer starts as "keep current".
 
 ## Project contents
 
@@ -97,8 +127,11 @@ Instruction size, approximate (characters / 4): the entrypoint is about 3,400 to
 | [docs/index.md](docs/index.md) | Reading guide |
 | [docs/install-cli.md](docs/install-cli.md) | Windows CLI setup for Claude Code and Codex (separate from installing this skill) |
 | [docs/research](docs/research/foundations.md) | Academic foundations, source register, research boundaries |
+| [docs/STATUS.md](docs/STATUS.md) | Current phase, focus, and key decisions |
+| [docs/design](docs/design/modular-layers.md) | Design of the modular layer package |
 | [docs/design-decisions.md](docs/design-decisions.md) | Rationale and differences from predecessor skills |
 | [skill/full-stack](skill/full-stack/SKILL.md) | Portable skill and operational references |
+| [skill/](skill/.claude-plugin/plugin.json) | Claude Code plugin root: manifest, hooks, `stack-evidence` subagent; [marketplace](.claude-plugin/marketplace.json) at the repo root |
 | [evals](evals/README.md) | Behavioral cases, evaluation protocol, A/B harness |
 | [ROADMAP.md](ROADMAP.md) | Remaining project work |
 

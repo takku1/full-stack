@@ -1,6 +1,6 @@
 # Full Stack roadmap
 
-This file tracks incomplete project work. Package 0.3.0 ([D-015](docs/design-decisions.md#d-015-fresh-user-review-and-second-field-report-package-030)) applies the [fresh-user review](docs/research/review-2026-10-05-fresh-user.md); retained [trial evidence](evals/results/revision-review.md) predates it. No sample establishes comparative effectiveness.
+This file tracks incomplete project work. Package 0.4.0 ([D-017](docs/design-decisions.md#d-017-modular-layer-orchestration-package-040)) restructures the skill into a small core, on-demand flows, and layer modules; FS-011..FS-018 track it. Package 0.3.0 ([D-015](docs/design-decisions.md#d-015-fresh-user-review-and-second-field-report-package-030)) applies the [fresh-user review](docs/research/review-2026-10-05-fresh-user.md); retained [trial evidence](evals/results/revision-review.md) predates it. No sample establishes comparative effectiveness.
 
 | ID | Work | Status | Acceptance |
 |---|---|---|---|
@@ -14,5 +14,18 @@ This file tracks incomplete project work. Package 0.3.0 ([D-015](docs/design-dec
 | FS-008 | Browser interaction for the stateful trial | Ready when browser tools available | Exercise rendered add/delete forms, visible validation, keyboard operation and restart; current evidence covers real HTTP only |
 | FS-009 | Context-dose comparison against plain Claude Code | First run done 2026-10-05 | [Results](evals/results/context-dose-2026-10-05.md): a 312-token brief beat both plain and the full skill on six small and medium cases (one session per cell). Next: repeat sessions, add a large or multi-worker task, and separate length from SkillWren format |
 | FS-010 | Guard the implement flow in live use | Ready | Use `run_guard.py` in a real multi-worker run (MochiOS or SkillWren BF-1..6); confirm collisions are caught and that the report replaces from-memory check claims; tune the overlap rule from observed false positives |
+| FS-011 | Stack brief and decision-record templates | In progress (0.4.0) | Templates in the package; every field in [modular-layers.md](docs/design/modular-layers.md) present; artifact checker validates them |
+| FS-012 | Brief-sized core with flows split out | In progress (0.4.0) | Core loaded on every run stays within roughly the FS-009 brief size (≤ ~600 tokens); design and implement flows load on demand; host discovery still works (re-run FS-005) |
+| FS-013 | Layer modules | In progress (0.4.0) | `data`, `runtime`, `interface`, `client`, `platform`, `crosscut`, `custom` share one interface; none ranks products; artifact checker validates frontmatter |
+| FS-014 | Mechanical compatibility check | In progress (0.4.0) | `check_stack.py` with tests: rule violations, unmet neighbor assumptions, missing layers; exit codes documented |
+| FS-015 | First greenfield trial of 0.4.0 | Ready after FS-011..014 | One greenfield brief end to end: decision records written, `check_stack.py` run, transcript retained; self-review reported as such |
+| FS-016 | Greenfield stack-selection evaluation | Research | Four or more greenfield cases plus two existing-repo cases; blind grading on coherence, justification, regret awareness, unneeded novelty, scope honesty; arms plain, brief, 0.3.0, 0.4.0 at matched budgets |
+| FS-017 | Module attribution | Depends on FS-016 | Sampled Shapley values over layer modules; report which modules raise grades, with variance |
+| FS-018 | Research fan-out to subagents | Depends on FS-016 | Only if FS-016 shows candidate evidence is the bottleneck; compare evidence quality and tokens with and without fan-out |
+| FS-019 | Turn budget and output caps | Applied 2026-11-12 ([D-018](docs/design-decisions.md#d-018-optimize-turns-and-output-before-instruction-length)); evaluation ready | Core tells the model to batch reads, run each script once per stage, and avoid rereads; templates cap decision records (~250 words per layer) and routine notes (≤5 lines). Non-inferiority vs current 0.4.0 per [optimization.md](docs/research/optimization.md#4-how-to-know-results-stayed-the-same-or-similar): grade drop ≤0.5, no new high-impact failures, hidden checks pass, ≥3 sessions per cell; report cost per accepted task and turns |
+| FS-020 | Ablation-driven deduplication | Depends on FS-019 | Remove one guidance block at a time; keep removals that pass the same non-inferiority margins on held-out cases |
+| FS-021 | Cheaper evidence model for stack research | Depends on FS-018 | Evidence-gathering subagents on a smaller model, decisions on the main model; compare evidence accuracy (version, license, limits) and cost per accepted task |
+| FS-022 | Length-penalized flow optimization (GEPA-style) | Depends on FS-016 | Objective is grade minus token penalty, with a length cap in reflection; optimize on one case split, confirm on a held-out split |
+| FS-023 | Verify the plugin live | Ready | `claude --plugin-dir ./skill` and a marketplace install: skill listed as `full-stack:full-stack`; PreToolUse hook blocks an out-of-scope edit during a guarded run; Stop hook holds an unclean run; `stack-evidence` returns rows on haiku; repeat on macOS or Linux |
 
 No CLI, graph database, or automated ontology reasoner is planned without demonstrated need.

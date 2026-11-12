@@ -20,6 +20,10 @@ Research follows the decisions that could change the design. Broad literature ex
 
 Planning is the default deliverable. A request to build or implement activates the conditional [implementation workflow](../skill/full-stack/references/implementation.md) within the selected scope; already authorized work needs no repeated approval. Dependency/tool installation, deployment, publication, and delegation follow applicable task and host permissions. The skill supplies instructions; the host supplies repository access, execution tools, and runtime capabilities.
 
+## Layer structure (package 0.4.0)
+
+From 0.4.0 the skill is organized as a small always-loaded core, design and implement flows, and one module per layer: data, runtime and scripting, interface, client, platform, cross-cutting concerns, plus a template for domain-specific layers. Each layer module helps choose that layer's technology for the brief at hand. One orchestrator keeps the choices consistent through a stack brief, decision records, and a mechanical compatibility check ([D-017](design-decisions.md#d-017-modular-layer-orchestration-package-040), [design](design/modular-layers.md)). Layer modules contain methods and criteria, not rankings, so the non-goals below still hold. In an existing repository every layer starts as "keep current".
+
 ## Output contract
 
 The deliverable must make the following questions answerable, using as few artifacts as the scope permits:
@@ -46,6 +50,8 @@ The design is ready for the next implementation increment when its required beha
 For an implementation request, readiness starts delivery. Completion requires the selected acceptance criteria to be exercised through real integration, with remaining requirements or unavailable checks recorded honestly. A first increment, a successful build, and a mock-backed demonstration do not establish milestone completion.
 
 ## Initial non-goals
+
+(Retained unchanged through 0.4.0.)
 
 This project does not build a new agent runtime, compiler, graph database, task runner, formal verifier, or universal technology catalog. It does not convert every component into a service, prescribe a fixed stack, or replace a subject repository's architecture with its own terminology. It does not promise that a carefully worded skill guarantees model understanding.
 

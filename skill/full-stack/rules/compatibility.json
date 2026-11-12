@@ -1,0 +1,77 @@
+{
+  "about": "Seed structural compatibility rules for scripts/check_stack.py. Tags, not products. A rule fires when every layer named in 'when' provides all listed tags ('brief' means brief.tags). 'requires' then demands the named layer provide all listed tags; 'excludes' forbids any of them. Project-local rules go in the stack block with cited evidence.",
+  "rules": [
+    {
+      "id": "R-001",
+      "when": {"platform": ["ephemeral-filesystem"]},
+      "excludes": {"data": ["local-file-store"]},
+      "why": "Files written to an ephemeral filesystem are lost on restart or redeploy."
+    },
+    {
+      "id": "R-002",
+      "when": {"platform": ["horizontally-scaled-instances"]},
+      "excludes": {"data": ["embedded-single-writer"]},
+      "why": "Several instances cannot safely share one embedded single-writer database file."
+    },
+    {
+      "id": "R-003",
+      "when": {"platform": ["serverless-functions"]},
+      "excludes": {"data": ["requires-persistent-connections"]},
+      "why": "Short-lived function instances exhaust connection-per-client databases unless a pooler or HTTP access sits between them."
+    },
+    {
+      "id": "R-004",
+      "when": {"interface": ["server-push"]},
+      "requires": {"platform": ["long-lived-connections"]},
+      "why": "Server push (WebSockets, SSE, streams) needs connections held open longer than a request."
+    },
+    {
+      "id": "R-005",
+      "when": {"platform": ["static-hosting-only"]},
+      "excludes": {"client": ["server-rendered"]},
+      "why": "Server rendering needs a running server; static hosting serves files only."
+    },
+    {
+      "id": "R-006",
+      "when": {"brief": ["offline-operation"]},
+      "requires": {"client": ["offline-first"], "interface": ["sync-capable"]},
+      "why": "Offline operation needs a client that works without the network and a protocol to reconcile changes later."
+    },
+    {
+      "id": "R-007",
+      "when": {"client": ["offline-first"]},
+      "requires": {"data": ["conflict-resolution"]},
+      "why": "Edits made offline on several devices conflict; the authoritative store needs a defined policy."
+    },
+    {
+      "id": "R-008",
+      "when": {"brief": ["financial-transactions"]},
+      "requires": {"data": ["transactional-writes"], "interface": ["idempotent-writes"]},
+      "why": "Money movement needs atomic multi-record writes and retries that cannot double-apply."
+    },
+    {
+      "id": "R-009",
+      "when": {"brief": ["user-accounts"]},
+      "requires": {"crosscut": ["authentication"]},
+      "why": "Accounts need an authentication decision; it is not implied by any other layer."
+    },
+    {
+      "id": "R-010",
+      "when": {"brief": ["regulated-personal-data"]},
+      "requires": {"crosscut": ["audit-logging", "encryption-at-rest"]},
+      "why": "Regulated personal data carries audit and protection obligations across layers."
+    },
+    {
+      "id": "R-011",
+      "when": {"brief": ["multi-region-writes"]},
+      "requires": {"data": ["multi-region-replication", "conflict-resolution"]},
+      "why": "Accepting writes in several regions needs replication and a defined conflict policy."
+    },
+    {
+      "id": "R-012",
+      "when": {"client": ["browser"], "interface": ["http-request-response"]},
+      "requires": {"interface": ["cors-or-same-origin"]},
+      "why": "Browsers block cross-origin calls unless the API is same-origin or sends CORS headers."
+    }
+  ]
+}

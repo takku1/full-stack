@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, and package 0.3.0 in D-015/D-016. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, and plugin packaging in D-019. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 
@@ -112,6 +112,50 @@ A follow-up critique of 0.3.0 raised four gaps: no enforcement story, effectiven
 - **Parallel work.** Work packages carry a write set; parallel packages must be disjoint, and shared files (manifests, lockfiles, registries, generated code) have one owning package that integrates last and reruns the full checks.
 - **Cost.** The appendix dropped text that repeats references the flows already load. The entrypoint is about 3,400 approximate tokens including the new enforcement section, down from about 3,500. A separate "lite" profile was rejected: each session starts fresh, so there is no "practiced runner" for whom the step glossary is redundant.
 - **Evidence.** `evals/ab/run_ab.py` runs FS-009's five paired cases in isolated profiles with hidden acceptance checks and a blind grading packet. It closes no evidence gap until it has been run and graded.
+
+## D-017: Modular layer orchestration (package 0.4.0)
+
+Status: accepted for implementation on 2026-11-12 at the owner's request; effectiveness unmeasured. Design: [modular-layers.md](design/modular-layers.md). Research: [modular-redesign.md](research/modular-redesign.md).
+
+The owner asked for Full Stack to break into layer-specific parts (data, runtime and scripting, interface, client, platform, cross-cutting), each able to find the best option for its layer, coordinated by an orchestrator.
+
+- **Tiered loading.** A brief-sized core is always loaded; design and implement flows and layer modules load only when needed. This reverses D-016's rejection of a lighter profile. The reason is FS-009's evidence, not a new preference. In that run a 312-token brief beat the full skill, and external studies find instruction volume adds cost without reliable gains ([30]–[34]).
+- **Central orchestration of coupled choices.** Layers are coupled, which is the case where multi-agent systems fail ([29], [36]). One orchestrator owns the stack brief and cross-layer contracts. Layer modules propose candidate sets with neighbor assumptions; the orchestrator intersects them and commits a joint profile, as in set-based concurrent engineering ([40]). Subagents may gather evidence for independent layers but do not decide.
+- **Methods, not catalogs.** Modules hold questions, criteria, and evidence requirements, and each decision is an ADR with CBAM-style scoring, a minimax-regret column, and an innovation budget ([41], [45], [46], [50]). This keeps the framing's non-goals of no universal catalog and no fixed stack.
+- **Mechanical compatibility.** `check_stack.py` checks decision records against a small rules file and against each other's neighbor assumptions, as feature-model constraints do ([44]).
+- **Existing stacks stay.** In a repository each layer starts as "keep current" and reopens only when the outcome requires it (D-005).
+- **Entrypoint format.** The SkillWren header (`contract`, `authority`, `effects`, `budget`) left `SKILL.md`. Hosts read only `name` and `description`, and the header cost about 400 tokens on every run. Its invariants now live in the core's rules, and its resources live in the flow that uses them. The `logic` blocks for design and implement moved unchanged in substance into `flows/`, with step meanings beside them. D-013's structure checks therefore still apply to the flows. Measured core: about 580 tokens (characters / 4), down from about 3,400.
+- **Rejected:** independent per-layer agents (coupling, MAST); negotiation, bidding, or debate between layers ([37]–[39], [51]); a ranked tool catalog (goes stale, and conflicts with the framing).
+
+Revisit if FS-016 shows the modular package does not beat the brief on greenfield selection, or if FS-017 attribution shows layer modules add no value.
+
+## D-018: Optimize turns and output before instruction length
+
+Status: applied 2026-11-12; non-inferiority unevaluated (FS-019). Research: [optimization.md](research/optimization.md).
+
+FS-009's extra cost tracked extra turns (bugfix 14 vs 8, crosscut 24 vs 18) more than instruction size, and cached instruction prefixes cost 0.05–0.1× on later turns ([55]). Changes:
+
+- **Guard batch commands.** `run_guard.py checks` runs every acceptance check in one call (`--each "criterion :: command"` or `--plan`). `close` combines check, report, and finish, and refuses to finish an unclean run without `--accept-blockers`. A guarded run drops from 4 + N calls to 3. `exec`, `check`, `report`, and `finish` remain for compatibility.
+- **Turn budget in the core.** Read needed files in one batch, never reread, and use the batch commands.
+- **Output caps.** About 250 words per layer decision record; at most five lines for a routine edit; "none" for empty sections; reference brief IDs instead of restating them.
+- **Evidence by row.** Stack research records one row per candidate (version, date, license, limit, URL), with subagents on a smaller model where the host allows it.
+- **Deduplication.** The implement flow no longer repeats concurrency rules held by the core and the implementation reference, and the design flow drops guidance the core already states.
+
+Instruction size is roughly flat: the core is about 640 tokens, up about 55 for the turn budget. That is deliberate, because the targets are turns and output. Rejected: LLMLingua-style compression of instructions, which defeats caching, is untested on agent instructions, and makes a maintained skill unreadable. Revisit any change that fails the non-inferiority margins in FS-019.
+
+## D-019: Ship as a Claude Code plugin around the portable skill
+
+Status: applied 2026-11-12; `claude plugin validate --strict` passes for the plugin and the marketplace; not yet loaded in a live session (FS-023).
+
+The owner asked for whichever format is optimal. The answer is both: the portable skill folder stays the single source, and `skill/` becomes a Claude Code plugin root around it.
+
+- **Why a plugin.** A bare skill cannot install hooks (D-016), so the guard enforced edits only after a manual settings change. The plugin ships `hooks/hooks.json`, which activates the guard automatically. A plugin can also define a subagent pinned to a cheaper model: `stack-evidence` on `haiku`, which returns cited evidence rows and never decides (D-018, FS-021). Marketplace install replaces the install scripts for Claude Code.
+- **Why keep the skill.** Codex and other hosts read the plain folder, and the install scripts still copy `skill/full-stack` unchanged.
+- **Plugin root is `skill/`, not the repo root.** Installs copy the plugin root into a cache, and a repo-root plugin would ship `docs/`, `evals/`, and tool directories. The manifest points at the skill with `"skills": ["./full-stack/"]`. The marketplace at the repo root uses `"source": "./skill"`.
+- **Hook launcher.** `scripts/guard_hook.sh` picks a working Python (`python3`, `python`, or `py -3`, skipping the Windows Store stub) and passes the event through. With no Python it exits 0, so a missing interpreter never blocks edits.
+- **Left to the owner:** a license. None exists in the repository, so none was declared. The plugin directory requires one for submission; local and marketplace installs do not.
+
+Rejected: plugin-only distribution, which would drop Codex; and duplicating the skill inside a separate plugin folder, which would create two sources to keep in sync.
 
 ## Inspected predecessor baseline (0.1.0)
 

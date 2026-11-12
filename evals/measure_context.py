@@ -53,7 +53,8 @@ def main():
         "files": files,
         "entrypoint_reduction_percent": round(100 * (1 - files[entry]["after"] / files[entry]["before"]), 2),
         "all_markdown": {axis: sum(row[axis] for row in files.values()) for axis in ("before", "after")},
-        "implementation_route_after": files[entry]["after"] + files[prefix + "references/implementation.md"]["after"],
+        "implementation_route_after": files[entry]["after"] + files[prefix + "references/implementation.md"]["after"] + files.get(prefix + "flows/implement.md", {"after": 0})["after"],
+        "stack_route_after": files[entry]["after"] + sum(files.get(prefix + f, {"after": 0})["after"] for f in ("flows/design.md", "flows/stack.md", "templates/stack-brief.md", "templates/decision-record.md")),
         "limits": "Counts omit host wrappers, tools, task artifacts, rereads, and reasoning. Reference loading varies by task. No equivalent 0.1 implementation route exists."
     }, indent=2))
 

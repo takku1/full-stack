@@ -7,16 +7,133 @@ import sys
 from urllib.parse import unquote
 
 
+LAYER_KEYS = ("layer", "decides", "constrains", "criteria", "evidence", "tags")
+TAG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def frontmatter(path):
+    parts = path.read_text(encoding="utf-8").replace("\r\n", "\n").split("---\n", 2)
+    if len(parts) != 3 or parts[0].strip():
+        return None
+    import yaml  # caller handles ImportError
+    return yaml.safe_load(parts[1])
+
+
+def check_layers(skill, layers):
+    """Every layer module shares one interface (docs/design/modular-layers.md)."""
+    errors = []
+    try:
+        import yaml  # noqa: F401
+    except ImportError:
+        print("PyYAML unavailable; layer frontmatter not checked.")
+        return errors
+    for name in layers:
+        path = skill / "layers" / f"{name}.md"
+        if not path.is_file():
+            continue
+        try:
+            header = frontmatter(path)
+        except Exception as exc:  # yaml.YAMLError and friends
+            errors.append(f"{path.name}: frontmatter is not valid YAML: {str(exc).splitlines()[0]}")
+            continue
+        if not isinstance(header, dict):
+            errors.append(f"{path.name}: missing frontmatter")
+            continue
+        missing = [key for key in LAYER_KEYS if key not in header]
+        if missing:
+            errors.append(f"{path.name}: frontmatter lacks {missing}")
+        if header.get("layer") != name:
+            errors.append(f"{path.name}: layer field is {header.get('layer')!r}, expected {name!r}")
+        for key in LAYER_KEYS[1:]:
+            if key in header and not isinstance(header[key], list):
+                errors.append(f"{path.name}: {key} must be a list")
+        for tag in header.get("tags") or []:
+            if not TAG.match(str(tag)):
+                errors.append(f"{path.name}: tag {tag!r} is not kebab-case")
+    return errors
+
+
+def check_rules(skill):
+    path = skill / "rules" / "compatibility.json"
+    if not path.is_file():
+        return []
+    try:
+        rules = json.loads(path.read_text(encoding="utf-8"))["rules"]
+    except (json.JSONDecodeError, KeyError) as exc:
+        return [f"compatibility.json unreadable: {exc}"]
+    errors, ids = [], set()
+    for rule in rules:
+        rid = rule.get("id")
+        if not rid or rid in ids:
+            errors.append(f"compatibility.json: missing or duplicate id {rid!r}")
+        ids.add(rid)
+        if not rule.get("why"):
+            errors.append(f"compatibility.json: {rid} has no 'why'")
+        if not (rule.get("requires") or rule.get("excludes")):
+            errors.append(f"compatibility.json: {rid} has neither 'requires' nor 'excludes'")
+        for section in ("when", "requires", "excludes"):
+            for tags in (rule.get(section) or {}).values():
+                for tag in tags:
+                    if not TAG.match(tag):
+                        errors.append(f"compatibility.json: {rid} tag {tag!r} is not kebab-case")
+    return errors
+
+
+def check_plugin(root):
+    """Plugin root is skill/; the marketplace at the repo root points to it."""
+    errors = []
+    plugin = root / "skill"
+    try:
+        manifest = json.loads((plugin / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        market = json.loads((root / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+        hooks = json.loads((plugin / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"plugin files unreadable: {exc}"]
+    if manifest.get("name") != "full-stack":
+        errors.append("plugin.json name must be full-stack")
+    for path in manifest.get("skills", []):
+        if not (plugin / path / "SKILL.md").is_file():
+            errors.append(f"plugin.json skills path has no SKILL.md: {path}")
+    entries = [p for p in market.get("plugins", []) if p.get("name") == "full-stack"]
+    if not entries or not (root / entries[0]["source"] / ".claude-plugin" / "plugin.json").is_file():
+        errors.append("marketplace.json does not point at the plugin root")
+    elif entries[0].get("version") != manifest.get("version"):
+        errors.append("marketplace and plugin.json versions differ")
+    for event, groups in hooks.get("hooks", {}).items():
+        for group in groups:
+            for hook in group.get("hooks", []):
+                for ref in re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/([^\"\s]+)", hook.get("command", "")):
+                    if not (plugin / ref).is_file():
+                        errors.append(f"hooks.json {event} references missing {ref}")
+    for agent in (plugin / "agents").glob("*.md"):
+        try:
+            header = frontmatter(agent)
+        except Exception as exc:
+            errors.append(f"{agent.name}: frontmatter invalid: {exc}")
+            continue
+        if not isinstance(header, dict) or not header.get("name") or not header.get("description"):
+            errors.append(f"{agent.name}: agent needs name and description")
+    return errors
+
+
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     skill = root / "skill" / "full-stack"
     errors = []
     workspace = []
     links = 0
-    required = [skill / "SKILL.md", skill / "agents" / "openai.yaml"]
+    layers = ["data", "runtime", "interface", "client", "platform", "crosscut", "custom"]
+    required = [skill / "SKILL.md", skill / "agents" / "openai.yaml",
+                skill / "flows" / "design.md", skill / "flows" / "stack.md", skill / "flows" / "implement.md",
+                skill / "templates" / "stack-brief.md", skill / "templates" / "decision-record.md",
+                skill / "rules" / "compatibility.json", skill / "scripts" / "check_stack.py",
+                skill / "scripts" / "run_guard.py"] + [skill / "layers" / f"{name}.md" for name in layers]
     for path in required:
         if not path.is_file():
             errors.append(f"Missing required file: {path}")
+    errors += check_layers(skill, layers)
+    errors += check_rules(skill)
+    errors += check_plugin(root)
     entry = skill / "SKILL.md"
     if entry.is_file():
         # Hosts parse the header with a general YAML parser, which is stricter than

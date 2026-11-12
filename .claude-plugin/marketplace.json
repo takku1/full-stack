@@ -1,0 +1,15 @@
+{
+  "name": "full-stack-skills",
+  "description": "Full Stack: layer-by-layer software design and technology selection for Claude Code.",
+  "owner": {
+    "name": "takku1"
+  },
+  "plugins": [
+    {
+      "name": "full-stack",
+      "source": "./skill",
+      "description": "Layer-by-layer design and technology selection with an orchestrator, run guard hook, and evidence subagent.",
+      "version": "0.4.0"
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import fnmatch
 import hashlib
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -246,6 +247,25 @@ def changes(root, record):
     return sorted(changed), sorted(touched), outside
 
 
+def run_check(root, record, command, criterion, tail_lines):
+    began = time.time()
+    try:
+        result = subprocess.run(command, cwd=root, capture_output=True, text=True, errors="replace")
+        code, output = result.returncode, (result.stdout + result.stderr)
+    except FileNotFoundError as exc:
+        code, output = 127, str(exc)
+    tail = output.strip().splitlines()[-tail_lines:]
+    record["checks"].append({
+        "command": " ".join(command),
+        "criterion": criterion,
+        "exit": code,
+        "seconds": round(time.time() - began, 2),
+        "tail": tail,
+        "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    })
+    return code, tail
+
+
 def cmd_exec(args):
     root = repo_root()
     path, record = load(runs_dir(root), args.run)
@@ -253,25 +273,69 @@ def cmd_exec(args):
     if not command:
         print("run_guard: give the check command after --.", file=sys.stderr)
         return 2
-    began = time.time()
-    try:
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, errors="replace")
-        code, output = result.returncode, (result.stdout + result.stderr)
-    except FileNotFoundError as exc:
-        code, output = 127, str(exc)
-    tail = output.strip().splitlines()[-args.tail:]
-    record["checks"].append({
-        "command": " ".join(command),
-        "criterion": args.criterion,
-        "exit": code,
-        "seconds": round(time.time() - began, 2),
-        "tail": tail,
-        "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-    })
+    code, tail = run_check(root, record, command, args.criterion, args.tail)
     save(path, record)
     print("\n".join(tail))
     print(f"[run_guard] exit {code}: {' '.join(command)}")
     return code
+
+
+def parse_plan(args):
+    """Checks from --each "criterion :: command" and/or a JSON --plan [{criterion, command}]."""
+    plan = []
+    for item in args.each:
+        criterion, sep, command = item.partition("::")
+        if not sep or not command.strip():
+            raise ValueError(f"--each needs 'criterion :: command': {item!r}")
+        plan.append((criterion.strip(), shlex.split(command.strip(), posix=True)))
+    if args.plan:
+        entries = json.loads(Path(args.plan).read_text(encoding="utf-8-sig"))
+        for entry in entries:
+            command = entry["command"]
+            plan.append((entry.get("criterion"), shlex.split(command) if isinstance(command, str) else list(command)))
+    if not plan:
+        raise ValueError("give at least one --each or a --plan file")
+    return plan
+
+
+def cmd_checks(args):
+    """Run every acceptance check in one call; each is recorded like exec."""
+    root = repo_root()
+    path, record = load(runs_dir(root), args.run)
+    try:
+        plan = parse_plan(args)
+    except (ValueError, OSError, KeyError, json.JSONDecodeError) as exc:
+        print(f"run_guard: {exc}", file=sys.stderr)
+        return 2
+    failed = 0
+    for criterion, command in plan:
+        code, tail = run_check(root, record, command, criterion, args.tail)
+        save(path, record)
+        status = "PASS" if code == 0 else f"FAIL (exit {code})"
+        print(f"[run_guard] {status}: {criterion or ''} :: {' '.join(command)}")
+        if code:
+            failed += 1
+            print("\n".join("    " + line for line in tail))
+    print(f"[run_guard] {len(plan) - failed}/{len(plan)} checks passed")
+    return 1 if failed else 0
+
+
+def cmd_close(args):
+    """check + report + finish in one call. Refuses to finish a run with problems unless told to."""
+    root = repo_root()
+    path, record = load(runs_dir(root), args.run)
+    problems = cmd_report(args)
+    if not record["checks"]:
+        print("\nNo checks were recorded.")
+        problems = 1
+    if problems and not args.accept_blockers:
+        print("\n[run_guard] run left open: fix the problems above, or report them as blockers "
+              "and rerun close with --accept-blockers.")
+        return 1
+    record["finished"] = True
+    save(path, record)
+    print(f"\n[run_guard] run {record['id']} finished" + (" with reported blockers" if problems else ""))
+    return 1 if problems else 0
 
 
 def cmd_check(args):
@@ -369,10 +433,10 @@ def cmd_hook(args):
         _changed, touched, outside = changes(root, record)
         problems = [f"outside the write set: {p}" for p in outside] + [f"changed an outside edit: {p}" for p in touched]
         if not record["checks"]:
-            problems.append("no checks were run through run_guard.py exec")
+            problems.append("no checks were run through run_guard.py checks or exec")
         if problems:
             print("run_guard: the open run is not ready to close: " + "; ".join(problems)
-                  + ". Fix these, or report them as blockers and run run_guard.py finish.", file=sys.stderr)
+                  + ". Fix these, or report them as blockers and run run_guard.py close --accept-blockers.", file=sys.stderr)
             return 2
     return 0
 
@@ -393,14 +457,23 @@ def main(argv=None):
     p.add_argument("--criterion", help="acceptance criterion this check evidences")
     p.add_argument("--tail", type=int, default=20)
     p.add_argument("command", nargs=argparse.REMAINDER)
+    p = sub.add_parser("checks", help="run several acceptance checks in one call")
+    p.add_argument("--run")
+    p.add_argument("--each", action="append", default=[], metavar="'CRITERION :: COMMAND'")
+    p.add_argument("--plan", help="JSON list of {criterion, command}")
+    p.add_argument("--tail", type=int, default=20)
     for name in ("check", "report", "finish"):
         sub.add_parser(name).add_argument("--run")
+    p = sub.add_parser("close", help="check, report, and finish in one call")
+    p.add_argument("--run")
+    p.add_argument("--accept-blockers", action="store_true",
+                   help="finish even with violations or no checks; they must be reported as blockers")
     p = sub.add_parser("hook")
     p.add_argument("--require-run", action="store_true",
                    help="block edits in a git repository when no guarded run is open")
     args = parser.parse_args(argv)
-    return {"start": cmd_start, "exec": cmd_exec, "check": cmd_check,
-            "report": cmd_report, "finish": cmd_finish, "hook": cmd_hook}[args.cmd](args)
+    return {"start": cmd_start, "exec": cmd_exec, "checks": cmd_checks, "check": cmd_check,
+            "report": cmd_report, "finish": cmd_finish, "close": cmd_close, "hook": cmd_hook}[args.cmd](args)
 
 
 if __name__ == "__main__":

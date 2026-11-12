@@ -14,7 +14,7 @@ Test doubles may exercise a contract early. Record what they simulate, unsupport
 
 ## Verify and close
 
-Order the work as: claim the write set, scoped edits, real checks, repair of failed work, then evidence and status updates. In a git repository, `scripts/run_guard.py` records the claim, runs each check, and flags changes outside the write set or to edits that predate the run; paste its report rather than restating results from memory. Reviewing a proposed change without applying it is design, not implementation. Build only work the design marks ready; conditional and blocked work stays reported until its decision or evidence arrives.
+Order the work as: claim the write set, scoped edits, real checks, repair of failed work, then evidence and status updates. In a git repository, `scripts/run_guard.py` records the claim, runs all checks in one `checks` call, and flags changes outside the write set or to edits that predate the run; paste the report from `close` rather than restating results from memory. Reviewing a proposed change without applying it is design, not implementation. Build only work the design marks ready; conditional and blocked work stays reported until its decision or evidence arrives.
 
 Run the project's applicable checks and exercise the real user/system path. Match evidence to acceptance criteria: relevant failures, independent state, cleanup, and persistence across process restart when required. Build/type checks and isolated tests do not alone establish integrated behavior. Report unavailable environments or unexecuted checks precisely.
 
