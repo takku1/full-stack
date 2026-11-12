@@ -63,6 +63,9 @@ design:
       apply readiness repair with design as design
       retry
 
+  if design raises a tier 2 discipline or contains a costly-to-reverse commitment:
+    apply independent review with design as design
+
   if design contains a costly-to-reverse commitment not already authorized:
     show design
     ask user to authorize the costly-to-reverse commitment
@@ -109,6 +112,10 @@ design:
 - **assurance screen**: run [assurance.md](assurance.md); its table becomes
   the design's assurance section, and claims without checks join blockers.
   When nothing is raised, the section reads "screen: all tier 0".
+- **independent review**: one fresh reviewer (a subagent given only the
+  request, the design, and the subject's contracts) reads the design once
+  and lists gaps. Fold accepted findings in; report the review apart from
+  your own checks. Without a subagent, say the review did not run.
 - **readiness repair**: fill a gap from evidence, or move it to blockers
   and mark the affected work blocked.
 - **conditional mark**: mark work depending on the declined commitment

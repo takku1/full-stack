@@ -72,8 +72,16 @@ check DESIGN.md` reports raised disciplines with no row and rows with no
 check. When building, declare the table with `run_guard.py start ...
 --assurance DESIGN.md` and make every row's check an acceptance
 criterion that names its ID: `run_guard.py checks --each "A-1 <claim> ::
-<command>"`. `close` refuses while a row (other than documented
-evidence) has no executed check, or a check fails.
+<command>"`. `close` refuses while the table has gaps or a row's latest
+check is missing or failing; documented evidence exempts only tier 1 rows.
+
+## Red flags
+
+| If you think | Instead | Seen in |
+|---|---|---|
+| "The design is small; I'll screen after building." | Screen and declare first; the guard hook blocks edits until you do. | Field report 3 (G1) |
+| "I read the modules and applied the controls; the table is ceremony." | The table turns controls into claims with checks; `close` refuses a row without a passing check. | FS-015 (P2) |
+| "This is routine." | Routine is one or two files with no new state, boundary, trust, or contract. Otherwise screen; a routine reason is reported. | Anticipated (external review 3) |
 
 Output cap: the answer IDs and the Screen line; one table row per claim; no
 restating module text.

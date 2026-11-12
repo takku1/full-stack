@@ -9,11 +9,12 @@ exec    run a check command and record its exit code and output tail
 check   list files the run changed; flag changes outside the write set and
         changes to edits that existed before the run
         Declare the run's assurance table with --assurance DESIGN.md, or say
-        the run is a routine edit with --routine (or later with declare)
+        why it is a routine edit with --routine REASON (or later with declare;
+        the hook blocks edits until one is declared)
 declare set or change the run's assurance declaration
 report  print changed files, violations, and executed checks as Markdown;
         --all lists every recorded run (handoff: which work was verified)
-finish  close the run so its write set no longer blocks other workers
+finish  same as close (it used to finish without any gates)
 hook    opt-in host hook (Claude Code PreToolUse/Stop): reads the event JSON
         on stdin, blocks an edit outside the open run's write set, and blocks
         stopping while the run has violations, no recorded checks, or an
@@ -41,7 +42,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from assurance import parse_table  # noqa: E402  (sibling script, standard library only)
+from assurance import DEFAULT_RULES, check_table, load_rules  # noqa: E402  (sibling script, stdlib only)
 
 STALE_HOURS = 24
 
@@ -214,10 +215,16 @@ def save(path, record):
     path.write_text(json.dumps(record, indent=2), encoding="utf-8")
 
 
+ASSURANCE_ID = re.compile(r"(?<![\w-])A-\d+(?!\w)")
+
+
 def assurance_declaration(root, args):
-    """None (undeclared), "routine", or {"file": path} for the design holding the assurance table."""
-    if getattr(args, "routine", False):
-        return "routine"
+    """None (undeclared), {"routine": reason}, or {"file": path} for the design holding the table."""
+    if getattr(args, "routine", None) is not None:
+        reason = args.routine.strip()
+        if not reason:
+            raise SystemExit("run_guard: --routine needs a one-line reason the report can show.")
+        return {"routine": reason}
     if getattr(args, "assurance", None):
         path = Path(args.assurance)
         if not path.is_absolute():
@@ -231,42 +238,101 @@ def assurance_declaration(root, args):
     return None
 
 
-def mentions(criterion, row_id):
-    return bool(criterion) and re.search(rf"(?<![\w-]){re.escape(row_id)}(?!\w)", criterion) is not None
+def is_routine(declared):
+    return declared == "routine" or (isinstance(declared, dict) and "routine" in declared)
 
 
-def assurance_gaps(root, record):
-    """Problems with the run's assurance: undeclared, unreadable, or rows with no executed check.
-    Field report 3 (G1): the screen was skipped or applied after the code in both live builds."""
-    declared = record.get("assurance")
-    if declared == "routine":
-        return []
-    if not declared:
-        return ["no assurance declared: run_guard.py declare --assurance DESIGN.md "
-                "(the file with the assurance table), or --routine for a routine edit"]
+def assurance_ids(criterion):
+    """Assurance row IDs a criterion names, in order ("A-1 ..." evidences row A-1)."""
+    seen = []
+    for found in ASSURANCE_ID.findall(criterion or ""):
+        if found not in seen:
+            seen.append(found)
+    return seen
+
+
+def latest_for(record, row_id):
+    """The most recent executed check that names the row, or None. Only the latest counts, so an
+    earlier pass cannot cover a later failure (external review 3, finding 4)."""
+    latest = None
+    for c in record["checks"]:
+        ids = c.get("assurance_ids")
+        if ids is None:
+            ids = assurance_ids(c.get("criterion"))
+        if row_id in ids:
+            latest = c
+    return latest
+
+
+def history(results):
+    """Compress a sequence of exits into 'fail → pass', 'pass only', and so on."""
+    states = []
+    for code in results:
+        state = "pass" if code == 0 else "fail"
+        if not states or states[-1] != state:
+            states.append(state)
+    return "pass only" if states == ["pass"] else " → ".join(states)
+
+
+def read_table(root, declared):
+    """(tiers, rows, structural errors) for the declared design, or an error string."""
     path = Path(declared["file"])
     if not path.is_absolute():
         path = root / path
     try:
-        _tiers, rows = parse_table(path.read_text(encoding="utf-8-sig"))
+        text = path.read_text(encoding="utf-8-sig")
     except OSError:
-        return [f"assurance file unreadable: {declared['file']}"]
+        return f"assurance file unreadable: {declared['file']}"
+    disciplines = set(load_rules(DEFAULT_RULES)["disciplines"])
+    tiers, rows, errors, _pending = check_table(text, disciplines)
     if not rows:
-        return [f"no assurance rows (| A-1 | ... |) in {declared['file']}"]
+        errors = errors + [f"no assurance rows (| A-1 | ... |) in {declared['file']}"]
+    return tiers, rows, errors
+
+
+def assurance_gaps(root, record):
+    """Why the run's assurance does not yet support closing it. Field report 3 (G1) and external
+    review 3: undeclared, declared after the code, structurally incomplete, or a row whose latest
+    executed check is missing or failing. Tier 2 needs a passing executed check whatever the label."""
+    declared = record.get("assurance")
     gaps = []
+    late = record.get("declared_after_changes") or []
+    if late:
+        gaps.append("assurance declared after changes to " + ", ".join(late)
+                    + " (screen and declare before editing)")
+    if is_routine(declared):
+        return gaps
+    if not declared:
+        return gaps + ["no assurance declared: run_guard.py declare --assurance DESIGN.md "
+                       "(the file with the assurance table), or --routine \"<why this is routine>\""]
+    table = read_table(root, declared)
+    if isinstance(table, str):
+        return gaps + [table]
+    tiers, rows, errors = table
+    gaps += [f"assurance table: {e}" for e in errors]
     for row in rows:
-        if row["evidence"] == "documented":
-            continue
-        if not any(mentions(c.get("criterion"), row["id"]) for c in record["checks"]):
-            gaps.append(f"assurance {row['id']} ({row['discipline']}) has no executed check; "
-                        f"name the ID in a criterion, e.g. --each \"{row['id']} <claim> :: <command>\"")
+        tier = tiers.get(row["discipline"], 0)
+        label = f"{row['id']} ({row['discipline']}, tier 2)" if tier == 2 else f"{row['id']} ({row['discipline']})"
+        latest = latest_for(record, row["id"])
+        if latest is None:
+            if row["evidence"] == "documented" and tier < 2:
+                continue
+            gaps.append(f"assurance {label} has no executed check; name the ID in a criterion, "
+                        f"e.g. --each \"{row['id']} <claim> :: <command>\"")
+        elif latest["exit"] != 0:
+            gaps.append(f"assurance {label}: latest check failed (exit {latest['exit']})")
     return gaps
 
 
 def describe_assurance(record):
     declared = record.get("assurance")
     if declared == "routine":
-        return "routine edit (no assurance table)"
+        return "routine edit (no reason recorded)"
+    if is_routine(declared):
+        text = f"routine edit: {declared['routine']}"
+        if declared.get("downgraded_from"):
+            text += f" (downgraded from `{declared['downgraded_from']}` with --override)"
+        return text
     if not declared:
         return "not declared"
     return f"table in `{declared['file']}`"
@@ -275,12 +341,26 @@ def describe_assurance(record):
 def cmd_declare(args):
     root = repo_root()
     path, record = load(runs_dir(root), args.run)
-    record["assurance"] = assurance_declaration(root, args)
-    if record["assurance"] is None:
-        print("run_guard: give --assurance DESIGN.md or --routine.", file=sys.stderr)
+    new = assurance_declaration(root, args)
+    if new is None:
+        print("run_guard: give --assurance DESIGN.md or --routine \"<reason>\".", file=sys.stderr)
         return 2
+    old = record.get("assurance")
+    if is_routine(new) and isinstance(old, dict) and old.get("file"):
+        if not args.override:
+            print(f"run_guard: this run declared the assurance table in {old['file']}; replacing it with "
+                  "--routine needs --override, and the report will show the downgrade.", file=sys.stderr)
+            return 2
+        new["downgraded_from"] = old["file"]
+    if not old:
+        changed = changes(root, record)[0]
+        if changed:
+            record["declared_after_changes"] = changed
+    record["assurance"] = new
     save(path, record)
     print(f"run {record['id']} assurance: {describe_assurance(record)}")
+    if record.get("declared_after_changes"):
+        print("note: declared after files changed; close will report it as a blocker.")
     return 0
 
 
@@ -385,6 +465,7 @@ def run_check(root, record, command, criterion, tail_lines):
     record["checks"].append({
         "command": shlex.join(command),
         "criterion": criterion,
+        "assurance_ids": assurance_ids(criterion),
         "exit": code,
         "seconds": round(time.time() - began, 2),
         "tail": tail,
@@ -556,16 +637,32 @@ def cmd_report(args):
         print(f"| `{c['command']}` | {c['criterion'] or ''} | {c['exit']} | {c['seconds']} |")
     if not record["checks"]:
         print("| none executed | | | |")
+    exits = {}
+    for c in record["checks"]:
+        exits.setdefault(c["criterion"] or c["command"], []).append(c["exit"])
+    if exits:
+        # A criterion seen failing before it passed shows the check can detect its failure.
+        print("\n| Criterion | Latest | History |\n|---|---|---|")
+        for name, codes in exits.items():
+            print(f"| {name} | {'pass' if codes[-1] == 0 else 'fail'} | {history(codes)} |")
+    declared = record.get("assurance")
+    if isinstance(declared, dict) and declared.get("file"):
+        table = read_table(root, declared)
+        if not isinstance(table, str):
+            tiers, rows, _errors = table
+            print("\n| Assurance row | Tier | Declared evidence | Executed (latest) | History |\n|---|---|---|---|---|")
+            for row in rows:
+                runs = [c["exit"] for c in record["checks"]
+                        if row["id"] in (c.get("assurance_ids") or assurance_ids(c.get("criterion")))]
+                latest = "none" if not runs else ("pass" if runs[-1] == 0 else f"fail (exit {runs[-1]})")
+                print(f"| {row['id']} | {tiers.get(row['discipline'], 0)} | {row['evidence'] or 'none'} | "
+                      f"{latest} | {history(runs) if runs else ''} |")
     return 1 if problems else 0
 
 
 def cmd_finish(args):
-    root = repo_root()
-    path, record = load(runs_dir(root), args.run)
-    record["finished"] = True
-    save(path, record)
-    print(f"run {record['id']} finished")
-    return 0
+    """Same gates as close (external review 3, finding 6): finishing never skips scope, checks, or assurance."""
+    return cmd_close(args)
 
 
 def open_run(root):
@@ -616,6 +713,11 @@ def cmd_hook(args):
             print(f"run_guard: {rel} is outside this run's write set ({', '.join(record['write_set'])}). "
                   "Narrow the change, or finish this run and start one that claims it.", file=sys.stderr)
             return 2
+        if not record.get("assurance"):
+            print("run_guard: declare this run's assurance before editing (external review 3): screen first "
+                  "(flows/assurance.md), then run_guard.py declare --assurance DESIGN.md, or "
+                  "declare --routine \"<why this is routine>\".", file=sys.stderr)
+            return 2
         return 0
     if name == "Stop":
         if record is None or event.get("stop_hook_active"):
@@ -636,7 +738,8 @@ def add_assurance_flags(p):
     group = p.add_mutually_exclusive_group()
     group.add_argument("--assurance", metavar="DESIGN.md",
                        help="file with the assurance table; each row ID must appear in an executed check's criterion")
-    group.add_argument("--routine", action="store_true", help="a routine edit with no assurance table")
+    group.add_argument("--routine", metavar="REASON",
+                       help="a routine edit with no assurance table; the reason is shown in the report")
 
 
 def main(argv=None):
@@ -653,6 +756,8 @@ def main(argv=None):
     add_assurance_flags(p)
     p = sub.add_parser("declare", help="set the run's assurance declaration")
     p.add_argument("--run")
+    p.add_argument("--override", action="store_true",
+                   help="allow replacing an assurance table with --routine; the report shows the downgrade")
     add_assurance_flags(p)
     p = sub.add_parser("exec")
     p.add_argument("--run")
@@ -667,13 +772,15 @@ def main(argv=None):
                         "own quoting (powershell -Command, sh -c) in a script file, or use --plan")
     p.add_argument("--plan", help="JSON list of {criterion, command}; an argv array is passed unchanged")
     p.add_argument("--tail", type=int, default=20)
-    for name in ("check", "finish"):
-        sub.add_parser(name).add_argument("--run")
+    sub.add_parser("check").add_argument("--run")
     p = sub.add_parser("report", help="report this run, or --all runs")
     p.add_argument("--run")
     p.add_argument("--all", action="store_true", help="one row per recorded run, newest first")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--json", action="store_true")
+    p = sub.add_parser("finish", help="same as close")
+    p.add_argument("--run")
+    p.add_argument("--accept-blockers", action="store_true")
     p = sub.add_parser("close", help="check, report, and finish in one call")
     p.add_argument("--run")
     p.add_argument("--accept-blockers", action="store_true",

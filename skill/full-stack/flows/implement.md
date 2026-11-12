@@ -76,8 +76,10 @@ implement:
 its log, not memory, is the record. A guarded run takes three calls:
 
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
-   --label <work ID> --assurance <design file>` (or `--routine` for a
-   routine edit with no assurance table; `declare` sets either later).
+   --label <work ID> --assurance <design file>`, or `--routine "<why>"` for
+   a routine edit with no assurance table. The hook blocks edits until one
+   is declared (`declare` sets it later); declaring after files changed,
+   or replacing a table with `--routine` (needs `--override`), is reported.
    Exit 3 is a collision. `--shared` claims files other workers also edit.
 2. **check plan + write checks**: all acceptance checks, including every
    check in the design's assurance table, in one call,
@@ -90,8 +92,10 @@ its log, not memory, is the record. A guarded run takes three calls:
    freely: `--adopt a b` and `--adopt a --adopt b` are the same.
 3. **verify gate + run report + run close**: `run_guard.py close` prints
    the report to paste into the completion report and finishes the run only
-   if scope is clean, every check passed, and every assurance row has an
-   executed check. If not, fix the problem, or
+   if scope is clean, every check passed, the assurance table is complete,
+   and each row's latest check passed (tier 2 rows always need one).
+   `finish` applies the same gates. The report marks criteria seen failing
+   before passing; reproduce a failure first where you can. If not, fix the problem, or
    report it as a blocker and rerun with `--accept-blockers`.
 
 Without the guard, check with `git status` and `git diff` and say the run

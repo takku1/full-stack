@@ -1,6 +1,6 @@
 ---
 name: full-stack
-description: Design, and build when asked, a change spanning components, state, or contracts, including choosing technologies layer by layer (data, runtime, interface, client, platform). Not for isolated routine edits.
+description: Use when designing or building a change that spans components, state, or contracts, or when choosing a technology for any layer (data, runtime, interface, client, platform). Not for isolated routine edits.
 ---
 
 # Full Stack

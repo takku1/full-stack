@@ -185,6 +185,10 @@ def main() -> int:
                 header = yaml.safe_load(parts[1]) if len(parts) == 3 else None
                 if not isinstance(header, dict) or not header.get("name") or not header.get("description"):
                     errors.append("SKILL.md frontmatter lacks name or description")
+                elif not str(header["description"]).startswith("Use when"):
+                    # A description that summarizes the workflow invites following it instead of
+                    # reading the skill (convention from obra/superpowers' writing-skills).
+                    errors.append("SKILL.md description must start with 'Use when' (a trigger, not a summary)")
             except yaml.YAMLError as exc:
                 errors.append(f"SKILL.md frontmatter is not valid YAML: {str(exc).splitlines()[0]}")
     files = list(root.rglob("*.md"))

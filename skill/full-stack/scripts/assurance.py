@@ -163,6 +163,7 @@ def parse_table(text):
 
 
 def check_table(text, disciplines):
+    """(tiers, rows, errors, pending) for an assurance table."""
     tiers, rows = parse_table(text)
     errors, pending = [], []
     if not tiers:
@@ -184,7 +185,7 @@ def check_table(text, disciplines):
     for d, t in tiers.items():
         if t and d not in covered:
             errors.append(f"{d} is raised to T{t} but has no row")
-    return rows, errors, pending
+    return tiers, rows, errors, pending
 
 
 def cmd_check(args):
@@ -194,7 +195,7 @@ def cmd_check(args):
     except OSError as exc:
         print(f"assurance: cannot read {args.file}: {exc}", file=sys.stderr)
         return 2
-    rows, errors, pending = check_table(text, set(rules["disciplines"]))
+    _tiers, rows, errors, pending = check_table(text, set(rules["disciplines"]))
     if args.json:
         print(json.dumps({"rows": rows, "errors": errors, "pending": pending}, indent=2))
     else:

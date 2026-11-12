@@ -61,7 +61,7 @@ class RunGuardTest(unittest.TestCase):
         self.assertEqual(code, 2, out)
 
     def test_close_finishes_clean_run_and_holds_dirty_one(self):
-        guard(self.repo, "start", "--write-set", "src/a.py", "--routine")
+        guard(self.repo, "start", "--write-set", "src/a.py", "--routine", "test run")
         (self.repo / "src" / "a.py").write_text("a = 5\n")
         code, out = guard(self.repo, "close")
         self.assertEqual(code, 1, out)  # no checks recorded
@@ -183,7 +183,7 @@ class RunGuardTest(unittest.TestCase):
         self.assertIn("`src/a.py`", out, "main tree report resolved another worktree's run")
 
     def test_close_refuses_failed_checks_without_accept_blockers(self):
-        guard(self.repo, "start", "--write-set", "src/a.py", "--routine")
+        guard(self.repo, "start", "--write-set", "src/a.py", "--routine", "test run")
         (self.repo / "src" / "a.py").write_text("a = 9\n")
         guard(self.repo, "exec", "--criterion", "tests", "--", sys.executable, "-c", "raise SystemExit(1)")
         code, out = guard(self.repo, "close")
@@ -312,7 +312,7 @@ class RunGuardTest(unittest.TestCase):
         return result.returncode, result.stderr
 
     def test_hook_blocks_edit_outside_write_set(self):
-        guard(self.repo, "start", "--write-set", "src/")
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "test run")
         inside = {"hook_event_name": "PreToolUse", "tool_name": "Edit",
                   "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
         outside = {"hook_event_name": "PreToolUse", "tool_name": "Write",
@@ -331,7 +331,7 @@ class RunGuardTest(unittest.TestCase):
         self.assertIn("no guarded run is open", err)
 
     def test_hook_stop_requires_checks_and_clean_scope(self):
-        guard(self.repo, "start", "--write-set", "src/", "--routine")
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "test run")
         code, err = self.hook({"hook_event_name": "Stop"})
         self.assertEqual(code, 2)
         self.assertIn("no checks were run", err)
@@ -341,9 +341,9 @@ class RunGuardTest(unittest.TestCase):
         guard(self.repo, "finish")
         self.assertEqual(self.hook({"hook_event_name": "Stop"})[0], 0)
 
-    def design(self, rows):
+    def design(self, rows, screen="Screen: security T1 (boundary); verification T1 (build); others T0\n\n"):
         path = self.repo / "design.md"
-        path.write_text("## Assurance\n\nScreen: security T1 (boundary); verification T1 (build); others T0\n\n"
+        path.write_text("## Assurance\n\n" + screen +
                         "| ID | Discipline | Claim | Could fail by | Control (owner) | Check | Evidence |\n"
                         "|---|---|---|---|---|---|---|\n" + "".join(rows))
         sh(self.repo, "git", "add", "design.md")
@@ -358,7 +358,7 @@ class RunGuardTest(unittest.TestCase):
         code, out = guard(self.repo, "close")
         self.assertEqual(code, 1, out)
         self.assertIn("no assurance declared", out)
-        self.assertEqual(guard(self.repo, "declare", "--routine")[0], 0)
+        self.assertEqual(guard(self.repo, "declare", "--routine", "test run")[0], 0)
         code, out = guard(self.repo, "close")
         self.assertEqual(code, 0, out)
         self.assertIn("Assurance: routine edit", out)
@@ -381,6 +381,109 @@ class RunGuardTest(unittest.TestCase):
         code, out = guard(self.repo, "close")
         self.assertEqual(code, 0, out)
 
+    # External review 3 (docs/research/review-2026-11-12-external-3.md), one test per finding.
+
+    OK = f'"{sys.executable}" -c "pass"'
+    BAD = f'"{sys.executable}" -c "raise SystemExit(5)"'
+
+    def test_review3_guard_runs_structural_table_check(self):
+        # Finding 1: a raised discipline with no row passed close.
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        guard(self.repo, "checks", "--each", f"A-1 claim :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("verification is raised to T1 but has no row", out)
+
+    def test_review3_missing_screen_and_duplicate_ids_block_close(self):
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-1 | security | d | f | x (y) | t2 | unknown |\n"], screen="")
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        guard(self.repo, "checks", "--each", f"A-1 claim :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("no 'Screen:' line", out)
+        self.assertIn("A-1: duplicate ID", out)
+
+    def test_review3_hook_blocks_edits_until_assurance_declared(self):
+        # Finding 2: assurance could be written after the code.
+        guard(self.repo, "start", "--write-set", "src/")
+        edit = {"hook_event_name": "PreToolUse", "tool_name": "Edit",
+                "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
+        code, err = self.hook(edit)
+        self.assertEqual(code, 2)
+        self.assertIn("declare", err)
+        self.assertEqual(guard(self.repo, "declare", "--routine", "one-line typo fix")[0], 0)
+        self.assertEqual(self.hook(edit)[0], 0)
+
+    def test_review3_declaring_after_changes_blocks_close(self):
+        guard(self.repo, "start", "--write-set", "src/")
+        (self.repo / "src" / "a.py").write_text("a = 3\n")  # a shell write the hook cannot see
+        guard(self.repo, "declare", "--routine", "late")
+        guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "pass")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("declared after changes to src/a.py", out)
+        self.assertEqual(guard(self.repo, "close", "--accept-blockers")[0], 1)
+        self.assertIn("| closed |", guard(self.repo, "report", "--all")[1])  # finished with blockers
+
+    def test_review3_routine_needs_reason_and_downgrade_needs_override(self):
+        # Finding 3: --routine was an unrestricted escape hatch.
+        self.assertEqual(guard(self.repo, "start", "--write-set", "src/", "--routine")[0], 2)
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        code, out = guard(self.repo, "declare", "--routine", "small")
+        self.assertEqual(code, 2, out)
+        self.assertIn("--override", out)
+        self.assertEqual(guard(self.repo, "declare", "--routine", "small after all", "--override")[0], 0)
+        out = guard(self.repo, "report")[1]
+        self.assertIn("routine edit: small after all", out)
+        self.assertIn("downgraded from `design.md`", out)
+
+    def test_review3_latest_check_per_assurance_id_must_pass(self):
+        # Finding 4: any earlier passing check counted for a row.
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        guard(self.repo, "checks", "--each", f"A-1 first :: {self.OK}", "--each", f"A-2 paths :: {self.OK}")
+        guard(self.repo, "checks", "--each", f"A-1 stricter :: {self.BAD}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("A-1 (security): latest check failed (exit 5)", out)
+        runs = list((self.repo / ".git" / "full-stack-runs").glob("*.json"))
+        record = json.loads(runs[0].read_text(encoding="utf-8"))
+        self.assertEqual(record["checks"][0]["assurance_ids"], ["A-1"])
+
+    def test_review3_tier2_rows_need_a_passing_check_even_if_documented(self):
+        # Finding 5: only executed, passing evidence satisfies tier 2.
+        self.design(["| A-1 | security | TLS everywhere | misconfig | provider (platform) | docs | documented |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"],
+                    screen="Screen: security T2 (money); verification T1 (build); others T0\n\n")
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        guard(self.repo, "checks", "--each", f"A-2 paths :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("A-1 (security, tier 2) has no executed check", out)
+        self.assertIn("| A-1 | 2 | documented | none |", out)
+
+    def test_review3_finish_applies_close_gates(self):
+        # Finding 6: finish set finished=True with no gates.
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "r")
+        code, out = guard(self.repo, "finish")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(guard(self.repo, "start", "--write-set", "src/a.py", "--routine", "r")[0], 3)
+
+    def test_report_marks_criteria_seen_failing_first(self):
+        # Red then green is evidence that a check can detect its failure (FS-016 check meaningfulness).
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "r")
+        guard(self.repo, "exec", "--criterion", "repro", "--", sys.executable, "-c", "raise SystemExit(1)")
+        guard(self.repo, "exec", "--criterion", "repro", "--", sys.executable, "-c", "pass")
+        guard(self.repo, "exec", "--criterion", "smoke", "--", sys.executable, "-c", "pass")
+        out = guard(self.repo, "report")[1]
+        self.assertIn("| repro | pass | fail → pass |", out)
+        self.assertIn("| smoke | pass | pass only |", out)
+
     def test_start_rejects_missing_assurance_file(self):
         code, out = guard(self.repo, "start", "--write-set", "src/", "--assurance", "nope.md")
         self.assertNotEqual(code, 0)
@@ -388,10 +491,10 @@ class RunGuardTest(unittest.TestCase):
 
     def test_report_all_lists_runs_for_handoff(self):
         # Field report 3 / FS-028: one query shows which earlier runs were verified.
-        guard(self.repo, "start", "--write-set", "src/a.py", "--label", "WP-1", "--routine")
+        guard(self.repo, "start", "--write-set", "src/a.py", "--label", "WP-1", "--routine", "test run")
         guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "pass")
         guard(self.repo, "close")
-        guard(self.repo, "start", "--write-set", "src/b.py", "--label", "WP-2", "--routine")
+        guard(self.repo, "start", "--write-set", "src/b.py", "--label", "WP-2", "--routine", "test run")
         guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "raise SystemExit(3)")
         code, out = guard(self.repo, "report", "--all")
         self.assertEqual(code, 0, out)

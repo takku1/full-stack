@@ -7,6 +7,8 @@ Upstream local sources at initial development:
 - Recurspec: `Z:\recurspec`, copyright 2026 Recurspec contributors.
 - Architectural Reasoning: `Z:\archetect\skills\architectural-reasoning`, copyright 2026 Dillon Carney.
 
+Package 0.7.0 also adopts practices from obra/superpowers (MIT, Jesse Vincent and contributors): pressure-testing process rules before writing them, "Use when" skill descriptions, red-flag tables, and plan tasks that declare consumed and produced interfaces. They are restated in this package's own words; no Superpowers text is included.
+
 Both predecessor distributions include the following MIT permission terms; their notices are retained here for adapted material. Academic publications retain their own rights and are cited rather than redistributed.
 
 ## MIT License

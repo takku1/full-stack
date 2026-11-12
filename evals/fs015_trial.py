@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from plugin_smoke import LOGIN, PLUGIN, init_of, make_repo, result_of, text_of, tool_uses  # noqa: E402
+from process_audit import audit  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -140,6 +141,7 @@ def process_checks(events, repo):
         "run_guard_checks": any("run_guard.py" in c and (" checks" in c or " exec" in c) for c in bash),
         "run_guard_close": any("run_guard.py" in c and " close" in c for c in bash),
         "connectors_absent": "claude_ai_Gmail" not in init,
+        "order": {k: v for k, v in audit(events).items() if k != "timeline"},
         "files_written": written,
     }
 
@@ -194,9 +196,10 @@ def main():
     for k, v in hidden.items():
         print(f"  hidden {k}: {'PASS' if v[0] else 'FAIL'} ({v[1]})")
     for k, v in process.items():
-        if k != "files_written":
+        if k not in ("files_written", "order"):
             print(f"  process {k}: {v}")
     print(f"  files: {process['files_written']}")
+    print(f"  order: {process['order']}")
     shutil.rmtree(base, ignore_errors=True)
 
 
