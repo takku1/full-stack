@@ -1,6 +1,6 @@
 # Engineering disciplines: how Full Stack should cover them
 
-Research date: 2026-11-12. Status: **research track only**. Under the feature freeze nothing here is built until FS-016 reports. Prompted by an external review that asked whether Full Stack covers the full discipline of building software, not just where software runs. Numbers in brackets refer to the [source register](sources.md#sources-for-engineering-disciplines-2026-11-12). Labels: **measured**, **precedent**, **proposal**.
+Research date: 2026-11-12. Status: **built as package 0.5.0** at the owner's request ([D-020](../design-decisions.md#d-020-build-the-assurance-dimension-package-050)), which lifted the freeze for this track only. It is unevaluated; FS-016's planted-failure cases are the test. The package modules follow the shape and the security example below. Prompted by an external review that asked whether Full Stack covers the full discipline of building software, not just where software runs. Numbers in brackets refer to the [source register](sources.md#sources-for-engineering-disciplines-2026-11-12). Labels: **measured**, **precedent**, **proposal**.
 
 ## Question
 

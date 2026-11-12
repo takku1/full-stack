@@ -80,6 +80,18 @@ Used by the [stack flow](../flows/stack.md). A layer here is a decision area, no
 | Innovation budget | Number of choices the team has not run in production that a profile may include | A spent token needs a scenario that justifies it |
 | Keep current | Layer status: the existing choice meets the outcome | The default in an existing repository; reopening needs evidence |
 
+## Assurance
+
+Used by the [assurance flow](../flows/assurance.md).
+
+| Term | Meaning here | Important distinction |
+|---|---|---|
+| Discipline | An engineering concern that decides whether the system is trustworthy (security, verification, reliability, and so on) | Not a layer: it applies across layers and selects no technology itself |
+| Screen | Yes/no risk questions that raise disciplines to tier 1 or 2 | Unknown counts as yes until evidence says otherwise |
+| Tier | 0 skip, 1 baseline steps and checks, 2 the full method for high consequence | Set by consequence, not by preference |
+| Assurance claim | A falsifiable statement about the system with what could make it false, a control, a check, and an evidence status | "Secure" is not a claim; "a user cannot read another user's lists" is |
+| Evidence status | documented, tested, inferred, or unknown | Only tested satisfies a tier 2 claim |
+
 ## Relation vocabulary
 
 Use only the distinctions useful to the task; stable IDs are helpful once several artifacts refer to the same element.

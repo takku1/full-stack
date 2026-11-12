@@ -43,6 +43,9 @@ design:
     read stack flow from flows/stack.md as stack
     apply stack orchestration with stack as scope
 
+  read assurance flow from flows/assurance.md as assurance
+  apply assurance screen with assurance as scope
+
   generate design from scope as design
 
   if reuse choices outside the stack flow could change the design:
@@ -55,7 +58,7 @@ design:
   if subject has existing contracts, providers, or registries:
     apply delta with integration as design
 
-  verify design has scope, ownership and contracts, choices, increments, and blockers sections matching the selected scope
+  verify design has scope, ownership and contracts, choices, assurance, increments, and blockers sections matching the selected scope
     otherwise:
       apply readiness repair with design as design
       retry
@@ -103,6 +106,9 @@ design:
 - **default**: take the reversible ordinary option and record it.
 - **stack orchestration**: run [stack.md](stack.md); its decision records
   become the design's choices, and its blockers join the design's blockers.
+- **assurance screen**: run [assurance.md](assurance.md); its table becomes
+  the design's assurance section, and claims without checks join blockers.
+  When nothing is raised, the section reads "screen: all tier 0".
 - **readiness repair**: fill a gap from evidence, or move it to blockers
   and mark the affected work blocked.
 - **conditional mark**: mark work depending on the declined commitment
@@ -136,9 +142,10 @@ reruns update that file. A stack decision set goes in the same file as a
 A substantial design returns, in order: scope (outcome, work IDs,
 constraints, exclusions, dispositions), ownership and contracts, choices
 (stack decision records when the stack flow ran; otherwise alternatives,
-evidence, fit gaps, revisit conditions), increments (requirements, write
-set, prerequisites, checks, ready / conditional / blocked), and blockers;
-an empty section reads "none".
+evidence, fit gaps, revisit conditions), assurance (screen result and the
+assurance table), increments (requirements, write set, prerequisites,
+checks, ready / conditional / blocked), and blockers; an empty section
+reads "none".
 
 ## Generate guidance
 

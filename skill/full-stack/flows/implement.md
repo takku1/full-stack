@@ -78,7 +78,8 @@ its log, not memory, is the record. A guarded run takes three calls:
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
    --label <work ID>`. Exit 3 is a collision. `--shared` claims files other
    workers also edit.
-2. **check plan + write checks**: all acceptance checks in one call,
+2. **check plan + write checks**: all acceptance checks, including every
+   check in the design's assurance table, in one call,
    `run_guard.py checks --each "<criterion> :: <command>" --each ...`
    (or `--plan checks.json`). Rerun it after a correction.
 3. **verify gate + run report + run close**: `run_guard.py close` prints

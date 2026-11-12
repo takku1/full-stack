@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, and plugin packaging in D-019. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, plugin packaging in D-019, and the assurance dimension (package 0.5.0) in D-020. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 
@@ -156,6 +156,19 @@ The owner asked for whichever format is optimal. The answer is both: the portabl
 - **Left to the owner:** a license. None exists in the repository, so none was declared. The plugin directory requires one for submission; local and marketplace installs do not.
 
 Rejected: plugin-only distribution, which would drop Codex; and duplicating the skill inside a separate plugin folder, which would create two sources to keep in sync.
+
+## D-020: Build the assurance dimension (package 0.5.0)
+
+Status: built 2026-11-12 at the owner's explicit request, which lifts the feature freeze for FS-026 only; unevaluated. Research: [engineering-disciplines.md](research/engineering-disciplines.md).
+
+- **Second dimension.** `flows/assurance.md` screens every design or build beyond a routine edit with twelve yes/no risk questions. Each raised discipline goes to tier 1 or tier 2, in the spirit of risk-proportional selection such as OWASP ASVS levels ([62]).
+- **Eleven modules** in `assurance/`: security, verification, reliability, observability, operations, performance, privacy, ux, maintainability, cost, compliance. Each has the same four parts, which the owner asked for: Policy, Framework (a named established method), How to, and Checks. They are about 300–490 tokens each and load only when raised.
+- **Assurance table.** One falsifiable claim per row, with what could make it false, the control and its owner, the check, and an evidence status (documented, tested, inferred, unknown; this pulls FS-024's statuses forward for assurance claims). Every check becomes an acceptance criterion in `run_guard.py checks`, so a failing assurance check blocks `close` (D3 fix).
+- **`crosscut` narrowed** to choosing shared technology (identity provider, secrets store, telemetry, test tooling); the obligations moved to the assurance modules.
+- **Cost.** The core grew from about 640 to about 745 tokens. A typical internet CRUD design adds the flow (~810), the table template (~305), and four modules (~1,600), about 2,700 tokens. A local tool adds the flow and verification only.
+- **Why checks, not prose:** working AI-written backends were exploitable about half the time on BaxBench ([60]); coverage can hide weak tests ([63]); LLM threat modeling alone is not reliable ([64]).
+
+Rejected: one technology-selection layer per discipline, which would recreate the context cost 0.4.0 removed; loading all disciplines on every run. Revisit if FS-016's planted-failure cases show no gain over 0.4.0, or if the screen raises disciplines on cases that should stay quiet.
 
 ## Inspected predecessor baseline (0.1.0)
 

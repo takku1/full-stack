@@ -46,6 +46,10 @@ skill/full-stack/
 
 The layer set is a default, not an ontology. A project with a different decomposition (MochiOS's compositor, shell, and kernel services) uses `custom.md` per layer. Layers are split where hidden decisions and authority differ (Parnas; D-003), not by directory.
 
+## Assurance dimension (0.5.0)
+
+Next to the layers, `flows/assurance.md` screens the design with risk questions and loads only the raised discipline modules from `assurance/`. Each module has Policy, Framework, How to, and Checks. The resulting assurance table's checks run through `run_guard.py` ([D-020](../design-decisions.md#d-020-build-the-assurance-dimension-package-050)). `layers/crosscut.md` now chooses only shared technology.
+
 ## Distribution
 
 The same folder ships two ways ([D-019](../design-decisions.md#d-019-ship-as-a-claude-code-plugin-around-the-portable-skill)). As a plain skill, the install scripts copy `skill/full-stack` for Codex and Claude Code. As a Claude Code plugin rooted at `skill/`, it adds `hooks/hooks.json` (the guard runs automatically through `scripts/guard_hook.sh`) and `agents/stack-evidence.md` (evidence rows on a small model).

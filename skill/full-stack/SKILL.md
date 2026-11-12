@@ -32,13 +32,18 @@ A one- or two-file fix needs nothing more. Otherwise load only what applies:
 |---|---|
 | Design work (any request beyond a routine edit) | [flows/design.md](flows/design.md) |
 | A technology must be chosen or reopened for any layer | [flows/stack.md](flows/stack.md), then only the affected layer modules |
+| Any design or build beyond a routine edit | [flows/assurance.md](flows/assurance.md): screen, then only the raised disciplines |
 | Building was requested | [flows/implement.md](flows/implement.md) |
 
 Layer modules: [data](layers/data.md), [runtime](layers/runtime.md),
 [interface](layers/interface.md), [client](layers/client.md),
 [platform](layers/platform.md), [crosscut](layers/crosscut.md),
-[custom](layers/custom.md). Templates: [stack brief](templates/stack-brief.md),
-[decision record](templates/decision-record.md). Method references:
+[custom](layers/custom.md). Assurance modules (Policy, Framework, How to,
+Checks): `assurance/` security, verification, reliability, observability,
+operations, performance, privacy, ux, maintainability, cost, compliance.
+Templates: [stack brief](templates/stack-brief.md),
+[decision record](templates/decision-record.md),
+[assurance table](templates/assurance-table.md). Method references:
 [terminology](references/terminology.md), [design method](references/design-method.md),
 [research](references/research.md), [artifacts](references/artifacts.md),
 [existing projects](references/existing-projects.md),

@@ -4,11 +4,11 @@
 
 ## Current Phase
 
-Package 0.4.0, the modular layer redesign, is built and passes its packaging and unit checks. It has not been trialled live or compared against 0.3.0, the brief, or plain prompting.
+Package 0.5.0: the 0.4.0 modular layer redesign plus a risk-tiered assurance dimension (D-020). It passes packaging and unit checks; the plugin plumbing passed live on Windows (FS-023). It has not been trialled live or compared against 0.3.0, the brief, or plain prompting.
 
 ## Active Focus
 
-Feature freeze: evidence before features. FS-023 is done on Windows ([results](../evals/results/plugin-smoke-2026-11-12.md)): the plugin plumbing works, and five guard defects were reproduced and fixed. Next: FS-015, then FS-016. Research track (frozen): an assurance dimension for engineering disciplines, FS-026. An [external review](research/review-2026-11-12-external.md) (2026-11-12) rated direction strong and empirical validation weak (3/10); its fixable defect, an absolute no-reread rule, is corrected.
+Feature freeze: evidence before features. FS-023 is done on Windows ([results](../evals/results/plugin-smoke-2026-11-12.md)): the plugin plumbing works, and five guard defects were reproduced and fixed. Next: FS-015, then FS-016. The assurance dimension (FS-026) was built at the owner's request and is unevaluated; FS-016 gains planted-failure cases for it. An [external review](research/review-2026-11-12-external.md) (2026-11-12) rated direction strong and empirical validation weak (3/10); its fixable defect, an absolute no-reread rule, is corrected.
 
 
 - FS-015: first greenfield trial of 0.4.0 end to end (stack brief → candidate sets → `check_stack.py profiles` → decision records → `check_stack.py check`).
@@ -18,12 +18,13 @@ Feature freeze: evidence before features. FS-023 is done on Windows ([results](.
 
 ## Architecture Summary
 
-Full Stack is a portable agent skill, shipped for Claude Code as a plugin rooted at `skill/` that adds an automatic guard hook and a haiku `stack-evidence` subagent (D-019). Its small core, `SKILL.md` at about 640 tokens, is always loaded and routes to on-demand flows (`design`, `stack`, `implement`) and to one module per layer (data, runtime, interface, client, platform, crosscut, custom). When a technology must be chosen, the orchestrator writes a stack brief. Layers propose candidate sets with `provides` and `assumes` tags; `scripts/check_stack.py` intersects them against `rules/compatibility.json`, and the orchestrator commits one joint profile with ADR-shaped decision records. Implementation follows the 0.3.0 flow, guarded by `scripts/run_guard.py` in three calls (start, checks, close).
+Full Stack is a portable agent skill, shipped for Claude Code as a plugin rooted at `skill/` that adds an automatic guard hook and a haiku `stack-evidence` subagent (D-019). Its small core, `SKILL.md` at about 640 tokens, is always loaded and routes to on-demand flows (`design`, `stack`, `implement`) and to one module per layer (data, runtime, interface, client, platform, crosscut, custom). An assurance screen raises only the relevant disciplines (security, verification, reliability, and eight more), each with Policy, Framework, How to, and Checks, and its checks feed the run guard. When a technology must be chosen, the orchestrator writes a stack brief. Layers propose candidate sets with `provides` and `assumes` tags; `scripts/check_stack.py` intersects them against `rules/compatibility.json`, and the orchestrator commits one joint profile with ADR-shaped decision records. Implementation follows the 0.3.0 flow, guarded by `scripts/run_guard.py` in three calls (start, checks, close).
 
 ## Key Decisions
 
 - [D-017](design-decisions.md#d-017-modular-layer-orchestration-package-040): modular layers, a tiered core, central orchestration of coupled choices, methods instead of catalogs, mechanical compatibility checks, and existing stacks kept by default. Research: [modular-redesign.md](research/modular-redesign.md).
 - [D-018](design-decisions.md#d-018-optimize-turns-and-output-before-instruction-length): optimize turns and output first. The guard now has batch `checks` and `close` commands; the core sets a turn budget; templates cap output. Unevaluated.
+- [D-020](design-decisions.md#d-020-build-the-assurance-dimension-package-050): assurance dimension built (owner exception to the freeze); unevaluated.
 - [D-019](design-decisions.md#d-019-ship-as-a-claude-code-plugin-around-the-portable-skill): plugin around the portable skill; validated, not yet loaded live (FS-023). No license chosen yet.
 - D-016: mechanical run guard and A/B harness (still in force).
 - D-015: costly-to-reverse commitments need authorization; work is ready, conditional, or blocked (still in force).

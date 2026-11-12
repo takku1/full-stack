@@ -79,6 +79,40 @@ def check_rules(skill):
     return errors
 
 
+DISCIPLINES = ("security", "verification", "reliability", "observability", "operations", "performance",
+               "privacy", "ux", "maintainability", "cost", "compliance")
+SECTIONS = ("## Policy", "## Framework", "## How to", "## Checks")
+
+
+def check_assurance(skill):
+    """Every discipline module keeps Policy, Framework, How to, and Checks, and the flow links each one."""
+    errors = []
+    flow = skill / "flows" / "assurance.md"
+    flow_text = flow.read_text(encoding="utf-8") if flow.is_file() else ""
+    for name in DISCIPLINES:
+        path = skill / "assurance" / f"{name}.md"
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        positions = [text.find(h) for h in SECTIONS]
+        if -1 in positions or positions != sorted(positions):
+            errors.append(f"assurance/{name}.md: needs sections {list(SECTIONS)} in order")
+        try:
+            header = frontmatter(path)
+        except Exception as exc:
+            errors.append(f"assurance/{name}.md: frontmatter invalid: {exc}")
+            continue
+        if not isinstance(header, dict) or header.get("discipline") != name:
+            errors.append(f"assurance/{name}.md: discipline field must be {name!r}")
+            continue
+        for key in ("triggers", "tier2_when"):
+            if not isinstance(header.get(key), list) or not header[key]:
+                errors.append(f"assurance/{name}.md: {key} must be a non-empty list")
+        if f"../assurance/{name}.md" not in flow_text:
+            errors.append(f"flows/assurance.md does not link assurance/{name}.md")
+    return errors
+
+
 def check_plugin(root):
     """Plugin root is skill/; the marketplace at the repo root points to it."""
     errors = []
@@ -127,13 +161,15 @@ def main() -> int:
                 skill / "flows" / "design.md", skill / "flows" / "stack.md", skill / "flows" / "implement.md",
                 skill / "templates" / "stack-brief.md", skill / "templates" / "decision-record.md",
                 skill / "rules" / "compatibility.json", skill / "scripts" / "check_stack.py",
-                skill / "scripts" / "run_guard.py"] + [skill / "layers" / f"{name}.md" for name in layers]
+                skill / "scripts" / "run_guard.py", skill / "flows" / "assurance.md",
+                skill / "templates" / "assurance-table.md"] + [skill / "layers" / f"{name}.md" for name in layers]         + [skill / "assurance" / f"{name}.md" for name in DISCIPLINES]
     for path in required:
         if not path.is_file():
             errors.append(f"Missing required file: {path}")
     errors += check_layers(skill, layers)
     errors += check_rules(skill)
     errors += check_plugin(root)
+    errors += check_assurance(skill)
     entry = skill / "SKILL.md"
     if entry.is_file():
         # Hosts parse the header with a general YAML parser, which is stricter than

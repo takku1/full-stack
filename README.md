@@ -2,7 +2,7 @@
 
 Full Stack turns a bounded software request into a connected design across the relevant stack, then carries it through implementation when requested. It defines requirements, ownership, contracts, and ordered work from a prompt, roadmap slice, prototype, or existing repository. Research targets decisions that could change the design. When a technology must be chosen, it works layer by layer (data, runtime and scripting, interface, client, platform, cross-cutting concerns). One orchestrator keeps the choices consistent, and a script checks them.
 
-The method is **requirements elaboration and architectural synthesis with traceability**. Package release 0.4.0, the modular layer redesign ([D-017](docs/design-decisions.md#d-017-modular-layer-orchestration-package-040); see [ROADMAP.md](ROADMAP.md) for open work and [docs/STATUS.md](docs/STATUS.md) for current state). 0.4.0 has passed its unit and packaging checks but has not yet been trialled or compared. This is a research-informed instruction skill, not an agent runtime or an academically validated method; comparative improvement remains unestablished.
+The method is **requirements elaboration and architectural synthesis with traceability**. Package release 0.5.0: the modular layer redesign plus a risk-tiered assurance dimension ([D-020](docs/design-decisions.md#d-020-build-the-assurance-dimension-package-050); [D-017](docs/design-decisions.md#d-017-modular-layer-orchestration-package-040); see [ROADMAP.md](ROADMAP.md) for open work and [docs/STATUS.md](docs/STATUS.md) for current state). It has passed its unit and packaging checks and a live plugin smoke test, but has not yet been trialled on a real design or compared. This is a research-informed instruction skill, not an agent runtime or an academically validated method; comparative improvement remains unestablished.
 
 Start with the [project framing](docs/project-framing.md), then the [research report](docs/research/foundations.md). The [terminology](skill/full-stack/references/terminology.md) defines the concepts used throughout. The [MochiOS example](docs/examples/mochios-desktop.md) shows how a visual concept becomes a bounded architectural design.
 
@@ -99,14 +99,16 @@ Every run loads only `SKILL.md`. It is a short set of rules (about the size of t
 
 | Part | Loaded when | Approx. tokens (chars / 4) |
 |---|---|---|
-| [SKILL.md](skill/full-stack/SKILL.md) core | Always | ~640 (0.3.0 entrypoint: ~3,400) |
+| [SKILL.md](skill/full-stack/SKILL.md) core | Always | ~745 (0.3.0 entrypoint: ~3,400) |
 | [flows/design.md](skill/full-stack/flows/design.md) | Any design beyond a routine edit | ~1,550 |
 | [flows/stack.md](skill/full-stack/flows/stack.md) + [templates](skill/full-stack/templates/stack-brief.md) | A layer needs a technology chosen or reopened | ~1,550 + ~650 |
 | [layers/](skill/full-stack/layers/data.md) `data`, `runtime`, `interface`, `client`, `platform`, `crosscut`, `custom` | Only for affected layers | ~350–700 each |
+| [flows/assurance.md](skill/full-stack/flows/assurance.md) + [table template](skill/full-stack/templates/assurance-table.md) | Any design or build beyond a routine edit | ~810 + ~305 |
+| [assurance/](skill/full-stack/assurance/security.md) security, verification, reliability, observability, operations, performance, privacy, ux, maintainability, cost, compliance | Only disciplines the screen raises; each has Policy, Framework, How to, Checks | ~300–490 each |
 | [flows/implement.md](skill/full-stack/flows/implement.md) | Building was requested | ~1,150 |
 | [references/](skill/full-stack/references/terminology.md) | As each flow step directs | unchanged from 0.3.0 |
 
-A greenfield design touching all six layers therefore loads about 7,900 tokens before references, more than 0.3.0. A routine edit loads about 640. Whether that trade pays off is what FS-016 measures.
+A greenfield design touching all six layers therefore loads about 7,900 tokens before references, more than 0.3.0. A routine edit loads about 745. A typical internet-facing design adds about 2,700 for assurance (flow, table, four modules). Whether that trade pays off is what FS-016 measures.
 
 The flows keep the [SkillWren](docs/design-decisions.md#d-013-adopt-a-logic-first-entrypoint) `logic` blocks, which the model reads as ordered instructions; nothing executes them. The SkillWren header was removed from the entrypoint, because hosts read only `name` and `description` and the header cost about 400 tokens per run. The stack flow works like this:
 
