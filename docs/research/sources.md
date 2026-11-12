@@ -131,3 +131,48 @@ Register for [optimization.md](optimization.md). Access checked on 2026-11-12. S
 58. **Lakshya A Agrawal, Shangyin Tan, Dilara Soylu, et al. (2025).** [GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning](https://arxiv.org/abs/2507.19457). *ICLR 2026* (oral). Abstract only. Beats GRPO by 6% on average (up to 20%) "using up to 35x fewer rollouts"; beats MIPROv2 by over 10%. No prompt-length claim in the abstract; length behavior comes from unverified practitioner reports.
 
 59. **Donald J. Schuirmann (1987).** A Comparison of the Two One-Sided Tests Procedure and the Power Approach for Assessing the Equivalence of Average Bioavailability. *Journal of Pharmacokinetics and Biopharmaceutics* 15(6), 657–680. Not accessed; cited for the two one-sided tests (TOST) equivalence procedure.
+
+## Sources for engineering disciplines (2026-11-12)
+
+Register for [engineering-disciplines.md](engineering-disciplines.md). Access checked on 2026-11-12. Practitioner standards marked "not accessed" are cited only for their well-known definitions.
+
+60. **Mark Vero, Niels Mündler, Victor Chibotaru, Veselin Raychev, Maximilian Baader, Nikola Jovanović, Jingxuan He, and Martin Vechev (2025).** [BaxBench: Can LLMs Generate Correct and Secure Backends?](https://arxiv.org/abs/2502.11844) arXiv:2502.11844v3; listed at ICML 2025. Abstract only. 392 backend tasks; best model (o1) 62% correct; exploits succeeded on "around half" of correct programs. Later leaderboard figures not verified.
+
+61. **Marc Bruni, Fabio Gabrielli, Mohammad Ghafari, and Martin Kropp (2025).** [Benchmarking Prompt Engineering Techniques for Secure Code Generation with GPT Models](https://arxiv.org/abs/2502.06039). *FORGE 2025*. Abstract only. Security-focused prefix reduced vulnerabilities by up to 56% (GPT-4o, GPT-4o-mini); iterative prompting repaired 41.9–68.7%. Static analysis based; older models.
+
+62. **OWASP (2025).** Application Security Verification Standard 5.0. Secondary summaries only ([SecAppDev 2026 handout](https://handouts.secappdev.org/handouts/2026/edenyardeni_what-s-new-in-asvs-v5.pdf), [SoftwareMill](https://softwaremill.com/whats-new-in-asvs-5-0/)). Levels are cumulative and risk-based; exact 5.0 wording not checked against the OWASP repository.
+
+63. **Guancheng Wang, Qinghua Xu, Lionel Briand, and Kui Liu (2026).** [Mutation-Guided Unit Test Generation with a Large Language Model](https://arxiv.org/abs/2506.02954). *IEEE Transactions on Software Engineering*; arXiv v8. Abstract only. 204 subjects; outperforms EvoSuite and vanilla prompting on mutation score; "some test suites achieve 100% coverage but only 4% mutation score."
+
+64. **AbdulAziz AbdulGhaffar and Ashraf Matrawy (2025).** [LLMs' Suitability for Network Security: A Case Study of STRIDE Threat Modeling](https://arxiv.org/abs/2505.04101). arXiv:2505.04101v2. Abstract only; no accuracy figures in the abstract (a 72% figure in search snippets is not used). Five LLMs, four prompting techniques; concludes fine-tuning is needed.
+
+65. **ISO/IEC (2023).** [25010:2023 Product quality model](https://www.iso.org/standard/78176.html). Catalog page only. Nine characteristics including safety; normative text not accessed.
+
+66. **Adam Shostack (2014).** *Threat Modeling: Designing for Security*. Wiley. Not accessed; cited for the four-question frame and STRIDE.
+
+67. **Amazon Web Services (accessed 2026-11-12).** [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/userguide/waf.html). Landing page and secondary summaries. Six pillars (operational excellence, security, reliability, performance efficiency, cost optimization, sustainability); risk-rated review questions and lenses.
+
+68. **Assurance cases: claims, arguments, evidence.** [UK MoD ASEMS: GSN and claim trees](https://www.asems.mod.uk/node/165); [ICO: argument-based assurance cases](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/explaining-decisions-made-with-artificial-intelligence/annexe-5-argument-based-assurance-cases/); [Assurance 2.0 (arXiv:2004.10474)](https://arxiv.org/abs/2004.10474). Search summaries. Claims grounded on evidence through arguments; Assurance 2.0 adds active search for defeaters.
+
+69. **NIST (2022).** SP 800-218, Secure Software Development Framework 1.1. Not accessed; cited for supply-chain and secure-development practice groups.
+
+70. **SLSA (OpenSSF).** Supply-chain Levels for Software Artifacts. Not accessed; cited for build provenance levels.
+
+71. **Betsy Beyer, Chris Jones, Jennifer Petoff, and Niall Richard Murphy, eds. (2016).** *Site Reliability Engineering*. O'Reilly. Not accessed; cited for SLOs, error budgets, and SLO-based alerting.
+
+72. **Michael T. Nygard (2018).** *Release It!*, 2nd ed. Pragmatic Bookshelf. Not accessed; cited for stability patterns.
+
+73. **Brendan Gregg (2012), USE method; Tom Wilkie (2018), RED method.** Practitioner methods. Not accessed; cited for definitions.
+
+74. **OpenTelemetry (CNCF).** Not accessed; cited as the vendor-neutral instrumentation standard.
+
+75. **Nicole Forsgren, Jez Humble, and Gene Kim (2018).** *Accelerate*. IT Revolution. Not accessed; cited for the four DORA metrics.
+
+76. **Adam Wiggins (2011).** The Twelve-Factor App. Not accessed; cited for configuration from the environment.
+
+77. **KU Leuven DistriNet.** [LINDDUN privacy threat modeling](https://www.nist.gov/privacy-framework/linddun-privacy-threat-modeling-framework). NIST resource page and secondary summaries. Seven categories; included in ISO/IEC 27550.
+
+78. **W3C (2023).** Web Content Accessibility Guidelines 2.2. Not accessed; cited for AA conformance.
+
+79. **Neal Ford, Rebecca Parsons, Patrick Kua, and Pramod Sadalage (2022).** [*Building Evolutionary Architectures*, 2nd ed.](https://www.thoughtworks.com/en-us/insights/books/building-evolutionaryarchitectures-second-edition) O'Reilly. Publisher page only. Fitness functions as automated checks protecting architectural dimensions.
+

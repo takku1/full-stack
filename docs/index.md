@@ -14,7 +14,7 @@ Start with [STATUS.md](STATUS.md) for the current phase and focus. Then read in 
 
 The skill references hold the canonical operational method and templates. These documents link to them rather than maintaining competing versions.
 
-For package 0.4.0 (modular layers), see [D-017](design-decisions.md#d-017-modular-layer-orchestration-package-040), the [design](design/modular-layers.md), and the [research report](research/modular-redesign.md) on skills, multi-agent coordination, decision methods, and game theory. [Optimization research](research/optimization.md) covers cutting cost while holding results: where the cost goes, which techniques fit, and the non-inferiority test for "similar".
+For package 0.4.0 (modular layers), see [D-017](design-decisions.md#d-017-modular-layer-orchestration-package-040), the [design](design/modular-layers.md), and the [research report](research/modular-redesign.md) on skills, multi-agent coordination, decision methods, and game theory. [Optimization research](research/optimization.md) covers cutting cost while holding results: where the cost goes, which techniques fit, and the non-inferiority test for "similar". [Engineering disciplines](research/engineering-disciplines.md) proposes a selective assurance dimension (security, verification, reliability, operations, and more). It is a research track, frozen until FS-016.
 
 For the 0.2.0 revision, see the [proposal/source review](research/improvement-review.md), conditional [implementation workflow](../skill/full-stack/references/implementation.md), and [validation evidence](../evals/results/revision-review.md).
 
