@@ -150,11 +150,19 @@ def hunk_violations(before, after, protected):
     return hits
 
 
-def load(runs, run_id):
+def pointer(runs, root):
+    """Per-worktree pointer to this worktree's latest run. The runs directory is shared by every
+    worktree of a repository; one shared pointer let a worktree's edits be checked against another
+    worktree's write set (FS-023 defect D1)."""
+    key = hashlib.sha256(str(Path(root).resolve()).lower().encode("utf-8")).hexdigest()[:12]
+    return runs / f"latest-{key}"
+
+
+def load(runs, run_id, root=None):
     if run_id is None:
-        latest = runs / "latest"
+        latest = pointer(runs, root or repo_root())
         if not latest.exists():
-            raise SystemExit("run_guard: no run started; use start first.")
+            raise SystemExit("run_guard: no run started in this worktree; use start first.")
         run_id = latest.read_text(encoding="utf-8").strip()
     path = runs / f"{run_id}.json"
     if not path.exists():
@@ -207,6 +215,7 @@ def cmd_start(args):
     record = {
         "id": run_id,
         "label": args.label,
+        "worktree": str(root.resolve()),
         "started": now,
         "head": head(root),
         "write_set": write_set,
@@ -218,7 +227,7 @@ def cmd_start(args):
         "finished": False,
     }
     save(runs / f"{run_id}.json", record)
-    (runs / "latest").write_text(run_id, encoding="utf-8")
+    pointer(runs, root).write_text(run_id, encoding="utf-8")
     print(f"run {run_id} started; write set: {', '.join(write_set)}; {len(dirty)} pre-existing uncommitted paths recorded")
     return 0
 
@@ -328,6 +337,15 @@ def cmd_close(args):
     if not record["checks"]:
         print("\nNo checks were recorded.")
         problems = 1
+    # The latest result per criterion counts, so a corrected rerun replaces an earlier failure.
+    # Before this, close finished runs whose checks had failed (FS-023 defect D3).
+    latest = {}
+    for c in record["checks"]:
+        latest[c["criterion"] or c["command"]] = c
+    failed = [name for name, c in latest.items() if c["exit"] != 0]
+    if failed:
+        print("\nFailing checks: " + "; ".join(failed))
+        problems = 1
     if problems and not args.accept_blockers:
         print("\n[run_guard] run left open: fix the problems above, or report them as blockers "
               "and rerun close with --accept-blockers.")
@@ -380,7 +398,7 @@ def cmd_finish(args):
 
 def open_run(root):
     runs = runs_dir(root)
-    latest = runs / "latest"
+    latest = pointer(runs, root)
     if not latest.exists():
         return None
     path = runs / f"{latest.read_text(encoding='utf-8').strip()}.json"

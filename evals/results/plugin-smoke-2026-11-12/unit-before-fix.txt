@@ -1,0 +1,50 @@
+........FF.F....F.........
+======================================================================
+FAIL: test_close_refuses_failed_checks_without_accept_blockers (__main__.RunGuardTest.test_close_refuses_failed_checks_without_accept_blockers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "Z:\full-stack\evals\test_run_guard.py", line 189, in test_close_refuses_failed_checks_without_accept_blockers
+    self.assertEqual(code, 1, out)
+AssertionError: 0 != 1 : ### Run 20261112-044253-ae525d
+
+Write set: `src/a.py`
+
+Changed files: `src/a.py`
+
+Scope violations: none
+
+| Check | Criterion | Exit | Seconds |
+|---|---|---|---|
+| `C:\Users\dcarn\AppData\Local\Programs\Python\Python312\python.exe -c raise SystemExit(1)` | tests | 1 | 0.03 |
+
+[run_guard] run 20261112-044253-ae525d finished
+
+
+======================================================================
+FAIL: test_commands_without_run_id_resolve_this_worktrees_run (__main__.RunGuardTest.test_commands_without_run_id_resolve_this_worktrees_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "Z:\full-stack\evals\test_run_guard.py", line 182, in test_commands_without_run_id_resolve_this_worktrees_run
+    self.assertIn("`src/a.py`", out, "main tree report resolved another worktree's run")
+AssertionError: '`src/a.py`' not found in '### Run 20261112-044254-e4ae60\n\nWrite set: `src/b.py`\n\nChanged files: none\n\nScope violations: none\n\n| Check | Criterion | Exit | Seconds |\n|---|---|---|---|\n| none executed | | | |\n' : main tree report resolved another worktree's run
+
+======================================================================
+FAIL: test_each_worktree_hook_checks_its_own_run (__main__.RunGuardTest.test_each_worktree_hook_checks_its_own_run)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "Z:\full-stack\evals\test_run_guard.py", line 171, in test_each_worktree_hook_checks_its_own_run
+    self.assertEqual(code, 2, f"main tree edit to b.py was allowed: {err}")
+AssertionError: 0 != 2 : main tree edit to b.py was allowed: 
+
+======================================================================
+FAIL: test_hook_without_python_is_visible (__main__.RunGuardTest.test_hook_without_python_is_visible)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "Z:\full-stack\evals\test_run_guard.py", line 211, in test_hook_without_python_is_visible
+    self.assertIn("guard inactive", result.stdout + result.stderr)
+AssertionError: 'guard inactive' not found in 'Z:\\full-stack\\skill\\full-stack\\scripts\\guard_hook.sh: line 6: cd: null directory\n'
+
+----------------------------------------------------------------------
+Ran 26 tests in 19.337s
+
+FAILED (failures=4)

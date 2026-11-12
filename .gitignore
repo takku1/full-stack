@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .tokenizer-cache/
 evals/ab/results/*/*/work/.claude/
+
+# Raw smoke-test transcripts list account integrations; keep local
+evals/results/plugin-smoke-*/*.jsonl

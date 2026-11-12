@@ -8,11 +8,10 @@ Package 0.4.0, the modular layer redesign, is built and passes its packaging and
 
 ## Active Focus
 
-Feature freeze: evidence before features. Order: FS-023, then FS-015, then FS-016. An [external review](research/review-2026-11-12-external.md) (2026-11-12) rated direction strong and empirical validation weak (3/10); its fixable defect, an absolute no-reread rule, is corrected.
+Feature freeze: evidence before features. FS-023 is done on Windows ([results](../evals/results/plugin-smoke-2026-11-12.md)): the plugin plumbing works, and five guard defects were reproduced and fixed. Next: FS-015, then FS-016. An [external review](research/review-2026-11-12-external.md) (2026-11-12) rated direction strong and empirical validation weak (3/10); its fixable defect, an absolute no-reread rule, is corrected.
 
 
 - FS-015: first greenfield trial of 0.4.0 end to end (stack brief → candidate sets → `check_stack.py profiles` → decision records → `check_stack.py check`).
-- FS-023: load the plugin live (hook blocks, subagent runs).
 - FS-005: re-verify host discovery and invocation, since `SKILL.md` changed shape.
 - FS-016: design the greenfield stack-selection evaluation; the FS-009 harness is the starting point.
 - FS-019: cost optimization. [Research](research/optimization.md) found that FS-009's extra skill cost tracks extra turns more than instruction length. A turn budget, output caps, and batch guard commands are now applied (D-018). They stand only if they pass a pre-registered non-inferiority test.

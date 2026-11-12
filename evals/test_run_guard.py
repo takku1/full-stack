@@ -1,6 +1,8 @@
 """Exercise skill/full-stack/scripts/run_guard.py against throwaway git repositories."""
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -150,6 +152,70 @@ class RunGuardTest(unittest.TestCase):
         code, out = guard(tree, "start", "--write-set", "src/a.py")
         self.assertEqual(code, 3, out)
         self.assertIn("main-tree", out)
+
+    # FS-023 operational cases (external review, 2026-11-12). Written before any fix.
+
+    def hook_at(self, cwd, event):
+        result = subprocess.run([sys.executable, str(GUARD), "hook"], cwd=cwd,
+                                input=json.dumps({"cwd": str(cwd), **event}), capture_output=True, text=True)
+        return result.returncode, result.stderr
+
+    def test_each_worktree_hook_checks_its_own_run(self):
+        self.assertEqual(guard(self.repo, "start", "--write-set", "src/a.py", "--label", "main")[0], 0)
+        tree = Path(self.tmp.name) / "tree"
+        sh(self.repo, "git", "worktree", "add", "-q", str(tree))
+        self.assertEqual(guard(tree, "start", "--write-set", "src/b.py", "--label", "tree")[0], 0)
+        # main's run does not claim src/b.py: an edit to it from the main tree must be refused
+        code, err = self.hook_at(self.repo, {"hook_event_name": "PreToolUse", "tool_name": "Write",
+                                             "tool_input": {"file_path": str(self.repo / "src" / "b.py")}})
+        self.assertEqual(code, 2, f"main tree edit to b.py was allowed: {err}")
+        code, err = self.hook_at(tree, {"hook_event_name": "PreToolUse", "tool_name": "Write",
+                                        "tool_input": {"file_path": str(tree / "src" / "a.py")}})
+        self.assertEqual(code, 2, f"tree edit to a.py was allowed: {err}")
+
+    def test_commands_without_run_id_resolve_this_worktrees_run(self):
+        guard(self.repo, "start", "--write-set", "src/a.py", "--label", "main")
+        tree = Path(self.tmp.name) / "tree"
+        sh(self.repo, "git", "worktree", "add", "-q", str(tree))
+        guard(tree, "start", "--write-set", "src/b.py", "--label", "tree")
+        code, out = guard(self.repo, "report")
+        self.assertIn("`src/a.py`", out, "main tree report resolved another worktree's run")
+
+    def test_close_refuses_failed_checks_without_accept_blockers(self):
+        guard(self.repo, "start", "--write-set", "src/a.py")
+        (self.repo / "src" / "a.py").write_text("a = 9\n")
+        guard(self.repo, "exec", "--criterion", "tests", "--", sys.executable, "-c", "raise SystemExit(1)")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("run left open", out)
+        # a later passing rerun of the same criterion makes the run closable
+        guard(self.repo, "exec", "--criterion", "tests", "--", sys.executable, "-c", "print('ok')")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+
+    def test_hook_without_python_is_visible(self):
+        hook = GUARD.parent / "guard_hook.sh"
+        shell = shutil.which("sh")
+        if not shell:
+            self.skipTest("no sh on PATH")
+        env = {**os.environ, "FULL_STACK_GUARD_PYTHONS": "no-such-python-a,no-such-python-b"}
+        for event, visible in (("SessionStart", True), ("Stop", True), ("PreToolUse", False)):
+            result = subprocess.run([shell, str(hook)], input=json.dumps({"hook_event_name": event}),
+                                    capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual("guard inactive" in result.stdout, visible, f"{event}: {result.stdout!r}")
+
+    def test_hook_launcher_passes_event_to_guard(self):
+        shell = shutil.which("sh")
+        if not shell:
+            self.skipTest("no sh on PATH")
+        guard(self.repo, "start", "--write-set", "src/a.py")
+        event = {"hook_event_name": "PreToolUse", "cwd": str(self.repo), "tool_name": "Write",
+                 "tool_input": {"file_path": str(self.repo / "README.md")}}
+        result = subprocess.run([shell, str(GUARD.parent / "guard_hook.sh")], input=json.dumps(event),
+                                capture_output=True, text=True, cwd=self.repo)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("outside this run's write set", result.stderr)
 
     def test_exec_records_checks_and_report_lists_them(self):
         guard(self.repo, "start", "--write-set", "src/")

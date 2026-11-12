@@ -1,0 +1,162 @@
+{
+  "claude": "2.1.322 (Claude Code)",
+  "model": "sonnet",
+  "tests": {
+    "T2-pretooluse": {
+      "passed": true,
+      "checks": {
+        "guard_run_started": true,
+        "write_attempted": true,
+        "refusal_names_guard": true,
+        "b_txt_absent": true
+      },
+      "cost_usd": 0.0832,
+      "seconds": 19.9,
+      "turns": 3,
+      "usage": {
+        "input_tokens": 8,
+        "cache_creation_input_tokens": 16779,
+        "cache_read_input_tokens": 76094,
+        "output_tokens": 841,
+        "output_tokens_details": {
+          "thinking_tokens": 307
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 16779,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 4,
+            "output_tokens": 573,
+            "cache_read_input_tokens": 30953,
+            "cache_creation_input_tokens": 281,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 281
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "exit": 0,
+      "stderr_tail": [
+        "Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer."
+      ],
+      "tool_results": [
+        {
+          "error": true,
+          "text": "PreToolUse:Write hook error: [sh \"Z:\\full-stack\\skill/full-stack/scripts/guard_hook.sh\"]: run_guard: b.txt is outside this run's write set (a.txt). Narrow the change, or finish this run and start one that claims it.\r\n\nThis hook comes from the full-stack@inline plugin."
+        }
+      ]
+    },
+    "T3-stop": {
+      "passed": true,
+      "checks": {
+        "stop_hook_feedback_seen": true,
+        "session_continued_after_stop": true
+      },
+      "cost_usd": 0.1112,
+      "seconds": 16.3,
+      "turns": 2,
+      "usage": {
+        "input_tokens": 6,
+        "cache_creation_input_tokens": 25882,
+        "cache_read_input_tokens": 35586,
+        "output_tokens": 415,
+        "output_tokens_details": {
+          "thinking_tokens": 180
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 25882,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 4,
+            "output_tokens": 410,
+            "cache_read_input_tokens": 21131,
+            "cache_creation_input_tokens": 9675,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 9675
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "exit": 0,
+      "stderr_tail": [
+        "Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer."
+      ],
+      "num_turns": 2,
+      "final_text": "cked file was already in the working tree when the session started. It appeared in the initial git status, and I didn't create or modify it. It isn't part of any work I did, so I left it alone.\n- **No checks run:** I ran no tools this session. Your earlier instruction was to reply with one word and use no tools, so there was nothing to check.\n\nI haven't run `run_guard.py close --accept-blockers`. That would accept the blockers on your behalf, and you told me not to use tools. If you want the run closed, tell me to run it. If `c.txt` should be in the write set, or removed, tell me that instead."
+    },
+    "T5-shell-write": {
+      "passed": true,
+      "checks": {
+        "shell_write_happened": true,
+        "stop_hook_detected_it": true
+      },
+      "cost_usd": 0.0794,
+      "seconds": 17.7,
+      "turns": 3,
+      "usage": {
+        "input_tokens": 8,
+        "cache_creation_input_tokens": 16529,
+        "cache_read_input_tokens": 75965,
+        "output_tokens": 571,
+        "output_tokens_details": {
+          "thinking_tokens": 273
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 16529,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "global",
+        "iterations": [
+          {
+            "input_tokens": 4,
+            "output_tokens": 484,
+            "cache_read_input_tokens": 30839,
+            "cache_creation_input_tokens": 145,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 145
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "exit": 0,
+      "stderr_tail": [
+        "Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer."
+      ],
+      "final_text": "NE\nThe `c.txt` write is done, but the guard hook is flagging it, and I haven't cleared that.\n\n- **Outside the write set:** You asked me to create `c.txt` directly, and the open run's write set doesn't include it.\n- **No checks run:** The command was a single `echo`, so nothing went through `run_guard.py checks` or `exec`.\n\nI haven't run `run_guard.py close --accept-blockers`. That would accept a guard failure for you, and I didn't start this run, so I don't know its scope. If you want it closed that way, tell me and I'll run it. Or I can add `c.txt` to the write set if you point me to the run."
+    }
+  },
+  "total_cost_usd": 0.2738
+}
