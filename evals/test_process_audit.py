@@ -55,6 +55,22 @@ class AuditTest(unittest.TestCase):
         self.assertTrue(result["screen_before_code"])
         self.assertEqual(result["code_edits"], 1)
 
+    def test_refused_tool_calls_did_not_happen(self):
+        # Pressure run 2026-11-12: the hook blocked the first code edit, and the permission layer
+        # refused a screen command; neither ran, so neither counts.
+        blocked = {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t1", "name": "Edit", "input": {"file_path": "app.py"}}]}}
+        refused = {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t2", "name": "Bash", "input": {"command": "py -3 assurance.py screen --yes boundary"}}]}}
+        results = {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "t1", "is_error": True, "content": "PreToolUse:Edit hook error: run_guard: ..."},
+            {"type": "tool_result", "tool_use_id": "t2", "is_error": True, "content": "requires approval"}]}}
+        result = audit([blocked, refused, results, TABLE, START, CODE, CHECKS, CLOSE])
+        self.assertTrue(result["screen_before_code"])
+        self.assertTrue(result["declared_before_code"])
+        self.assertEqual(result["code_edits"], 1)
+        self.assertEqual(result["refused_calls"], 2)
+
     def test_shell_write_is_counted(self):
         result = audit([tool("Bash", command="echo x > app.py")])
         self.assertEqual(result["shell_writes"], 1)

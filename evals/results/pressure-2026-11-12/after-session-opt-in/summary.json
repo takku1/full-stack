@@ -1,0 +1,43 @@
+{
+  "model": "sonnet",
+  "spent_usd": 0.22,
+  "pass_rates": {
+    "continue-small/skill": "0/1"
+  },
+  "sessions": [
+    {
+      "scenario": "continue-small",
+      "arm": "skill",
+      "rep": 0,
+      "cost_usd": 0.21959610000000004,
+      "seconds": 59.4,
+      "passed": false,
+      "missed": [
+        "screen_before_code",
+        "declared_before_code"
+      ],
+      "rationalizations": [],
+      "audit": {
+        "skill_used": true,
+        "stack_profiles_run": false,
+        "stack_check_run": false,
+        "screen": true,
+        "screen_before_code": false,
+        "table": true,
+        "table_checked": true,
+        "guard_started": true,
+        "guard_before_code": false,
+        "declared": true,
+        "declared_before_code": false,
+        "declared_table": true,
+        "routine_reasons": [],
+        "checks_recorded": true,
+        "checks_name_assurance_ids": true,
+        "closed": true,
+        "code_edits": 4,
+        "shell_writes": 1
+      },
+      "hidden_pass": true
+    }
+  ]
+}

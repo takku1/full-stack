@@ -322,6 +322,26 @@ class RunGuardTest(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("outside this run's write set", err)
 
+    def test_invoking_the_skill_opts_the_session_into_the_guard(self):
+        # Pressure smoke run 2026-11-12: with the skill invoked, the model edited code with no run,
+        # and the hook could not object because no run was open.
+        code_edit = {"hook_event_name": "PreToolUse", "tool_name": "Edit", "session_id": "s1",
+                     "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
+        doc_edit = {**code_edit, "tool_input": {"file_path": str(self.repo / "docs" / "design" / "x.md")}}
+        self.assertEqual(self.hook(code_edit)[0], 0)  # skill not invoked: no change for other sessions
+        self.assertEqual(self.hook({"hook_event_name": "UserPromptSubmit", "session_id": "s1",
+                                    "prompt": "/full-stack:full-stack continue building"})[0], 0)
+        code, err = self.hook(code_edit)
+        self.assertEqual(code, 2)
+        self.assertIn("invoked Full Stack", err)
+        self.assertEqual(self.hook(doc_edit)[0], 0)  # design notes stay free
+        self.assertEqual(self.hook({**code_edit, "session_id": "s2"})[0], 0)  # other sessions unaffected
+        self.assertEqual(self.hook({"hook_event_name": "PreToolUse", "tool_name": "Skill", "session_id": "s3",
+                                    "tool_input": {"skill": "full-stack:full-stack"}})[0], 0)
+        self.assertEqual(self.hook({**code_edit, "session_id": "s3"})[0], 2)  # model-invoked skill too
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "test run")
+        self.assertEqual(self.hook(code_edit)[0], 0)
+
     def test_hook_require_run_blocks_unguarded_edits(self):
         event = {"hook_event_name": "PreToolUse", "tool_name": "Edit",
                  "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}

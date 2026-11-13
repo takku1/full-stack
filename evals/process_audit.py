@@ -34,14 +34,34 @@ def load_events(path):
     return events
 
 
+def refused_ids(events):
+    """Tool uses that never ran: blocked by a hook or refused by the permission layer. An edit the
+    guard hook blocked must not count as the first code edit (pressure run 2026-11-12)."""
+    refused = set()
+    for e in events:
+        if e.get("type") != "user":
+            continue
+        content = (e.get("message") or {}).get("content")
+        for item in content if isinstance(content, list) else []:
+            if item.get("type") == "tool_result" and item.get("is_error"):
+                text = item.get("content")
+                text = text if isinstance(text, str) else json.dumps(text)
+                if re.search(r"hook error|requires? (manual )?approval|needs approval|permission", text, re.I):
+                    refused.add(item.get("tool_use_id"))
+    return refused
+
+
 def actions(events):
-    """Assistant tool uses and text blocks, in transcript order."""
+    """Assistant tool uses that ran and text blocks, in transcript order."""
+    refused = refused_ids(events)
     out = []
     for e in events:
         if e.get("type") != "assistant":
             continue
         for item in (e.get("message") or {}).get("content", []) or []:
             if item.get("type") == "tool_use":
+                if item.get("id") in refused:
+                    continue
                 out.append(("tool", item.get("name", ""), item.get("input") or {}))
             elif item.get("type") == "text":
                 out.append(("text", "", {"text": item.get("text", "")}))
@@ -136,6 +156,7 @@ def audit(events):
         "closed": first("guard_close", "guard_finish") is not None,
         "code_edits": sum(1 for t in timeline if t["step"] == "code_edit"),
         "shell_writes": sum(1 for t in timeline if t["step"] == "shell_write"),
+        "refused_calls": len(refused_ids(events)),
         "timeline": timeline,
     }
 

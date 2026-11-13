@@ -15,7 +15,8 @@ declare set or change the run's assurance declaration
 report  print changed files, violations, and executed checks as Markdown;
         --all lists every recorded run (handoff: which work was verified)
 finish  same as close (it used to finish without any gates)
-hook    opt-in host hook (Claude Code PreToolUse/Stop): reads the event JSON
+hook    host hook (Claude Code UserPromptSubmit/PreToolUse/Stop): a session that
+        invokes Full Stack needs a guarded run for code edits; reads the event JSON
         on stdin, blocks an edit outside the open run's write set, and blocks
         stopping while the run has violations, no recorded checks, or an
         assurance row without an executed check
@@ -679,6 +680,22 @@ def open_run(root):
     return record
 
 
+SKILL_PROMPT = re.compile(r"(^|\s)/full-stack(:full-stack)?(\s|$)")
+
+
+def session_marker(root, session_id):
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", str(session_id))[:128]
+    folder = runs_dir(root) / "sessions"
+    folder.mkdir(exist_ok=True)
+    return folder / safe
+
+
+def is_code(rel):
+    """Edits that change the subject; design notes (Markdown, docs/) stay free before a run."""
+    p = rel.lower()
+    return not p.endswith((".md", ".markdown", ".txt")) and not p.startswith("docs/") and "/docs/" not in p
+
+
 def cmd_hook(args):
     """Exit 2 tells the host to block the action and show stderr to the model."""
     try:
@@ -692,6 +709,17 @@ def cmd_hook(args):
     root = Path(probe.stdout.strip())
     record = open_run(root)
     name = event.get("hook_event_name", "")
+    session = event.get("session_id")
+    # Invoking Full Stack opts the session into the guard: code edits then need a guarded run.
+    # Without this, a session that never started a run was never checked (pressure smoke run).
+    if name == "UserPromptSubmit":
+        if session and SKILL_PROMPT.search(str(event.get("prompt", ""))):
+            session_marker(root, session).write_text("prompt", encoding="utf-8")
+        return 0
+    if name == "PreToolUse" and event.get("tool_name") == "Skill":
+        if session and "full-stack" in json.dumps(event.get("tool_input") or {}):
+            session_marker(root, session).write_text("skill", encoding="utf-8")
+        return 0
     if name == "PreToolUse":
         target = (event.get("tool_input") or {}).get("file_path") or (event.get("tool_input") or {}).get("notebook_path")
         if not target:
@@ -707,6 +735,13 @@ def cmd_hook(args):
             if args.require_run:
                 print("run_guard: no guarded run is open. Start one before editing: "
                       "run_guard.py start --write-set <paths> --label <work ID>", file=sys.stderr)
+                return 2
+            if session and is_code(rel) and session_marker(root, session).exists():
+                print("run_guard: this session invoked Full Stack, so code edits need a guarded run. Screen first "
+                      "(flows/assurance.md), then run_guard.py start --write-set <paths> --label <work ID> "
+                      "--assurance DESIGN.md, or --routine \"<why this is routine>\" for a fix that adds no state, "
+                      "trust boundary, permission, or contract. Design notes can be written without a run.",
+                      file=sys.stderr)
                 return 2
             return 0
         if not in_write_set(rel, record["write_set"]):

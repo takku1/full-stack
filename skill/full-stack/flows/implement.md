@@ -73,7 +73,8 @@ implement:
 ## What is checked mechanically
 
 `scripts/run_guard.py` (Python 3, git) enforces scope and evidence claims;
-its log, not memory, is the record. A guarded run takes three calls:
+its log, not memory, is the record. With the plugin's hooks, a session that
+invokes Full Stack cannot edit code until a guarded run is open. A guarded run takes three calls:
 
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
    --label <work ID> --assurance <design file>`, or `--routine "<why>"` for

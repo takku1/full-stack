@@ -1,0 +1,47 @@
+{
+  "model": "sonnet",
+  "spent_usd": 0.14,
+  "pass_rates": {
+    "continue-small/skill": "0/1"
+  },
+  "sessions": [
+    {
+      "scenario": "continue-small",
+      "arm": "skill",
+      "rep": 0,
+      "cost_usd": 0.14090149999999999,
+      "seconds": 42.0,
+      "passed": false,
+      "missed": [
+        "screen_before_code",
+        "declared_before_code",
+        "checks_name_assurance_ids",
+        "closed"
+      ],
+      "rationalizations": [
+        "Splitting into smaller steps: edit first, then test with a script."
+      ],
+      "audit": {
+        "skill_used": false,
+        "stack_profiles_run": false,
+        "stack_check_run": false,
+        "screen": false,
+        "screen_before_code": false,
+        "table": false,
+        "table_checked": false,
+        "guard_started": false,
+        "guard_before_code": false,
+        "declared": false,
+        "declared_before_code": false,
+        "declared_table": false,
+        "routine_reasons": [],
+        "checks_recorded": false,
+        "checks_name_assurance_ids": false,
+        "closed": false,
+        "code_edits": 2,
+        "shell_writes": 2
+      },
+      "hidden_pass": true
+    }
+  ]
+}

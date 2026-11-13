@@ -26,7 +26,8 @@ Always:
   scripts' batch commands. Write only what someone
   will use: tables over prose, one line per unchanged item, no repetition.
 
-A one- or two-file fix needs nothing more. Otherwise load only what applies:
+A one- or two-file fix that adds no state, trust boundary, permission, or
+contract needs nothing more. Otherwise load only what applies:
 
 | Situation | Read |
 |---|---|
