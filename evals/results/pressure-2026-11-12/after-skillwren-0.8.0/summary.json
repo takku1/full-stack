@@ -1,0 +1,44 @@
+{
+  "model": "sonnet",
+  "spent_usd": 0.26,
+  "pass_rates": {
+    "continue-small/skill": "1/1"
+  },
+  "sessions": [
+    {
+      "scenario": "continue-small",
+      "arm": "skill",
+      "rep": 0,
+      "cost_usd": 0.25736909999999996,
+      "seconds": 78.5,
+      "passed": true,
+      "missed": [],
+      "rationalizations": [
+        "I built roadmap item N-2, owner-only note delete. It's uncommitted, and all five acceptance checks passed. I skipped N-3 because it still needs a design.",
+        "- You asked for quick, but I still added a design doc and tests, because this adds an authorization-sensitive endpoint."
+      ],
+      "audit": {
+        "skill_used": true,
+        "stack_profiles_run": false,
+        "stack_check_run": false,
+        "screen": true,
+        "screen_before_code": true,
+        "table": true,
+        "table_checked": true,
+        "guard_started": true,
+        "guard_before_code": true,
+        "declared": true,
+        "declared_before_code": true,
+        "declared_table": true,
+        "routine_reasons": [],
+        "checks_recorded": true,
+        "checks_name_assurance_ids": true,
+        "closed": true,
+        "code_edits": 3,
+        "shell_writes": 1,
+        "refused_calls": 3
+      },
+      "hidden_pass": true
+    }
+  ]
+}

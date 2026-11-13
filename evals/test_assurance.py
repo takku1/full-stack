@@ -72,6 +72,14 @@ class ScreenTest(unittest.TestCase):
         result = screen(yes=["money"], high=["all"])
         self.assertEqual(result["reliability"]["tier"], 2)
 
+    def test_comma_separated_answers_are_accepted(self):
+        # Live 0.8.0 session: the model wrote --yes boundary,tenants twice before finding the
+        # space-separated form; both spellings now mean the same.
+        no = [q for q in QUESTIONS if q not in ("boundary", "tenants")]
+        code, out = run("screen", "--json", "--yes", "boundary,tenants", "--no", ",".join(no))
+        self.assertEqual(code, 0, out)
+        self.assertEqual({d["discipline"]: d["tier"] for d in json.loads(out)["disciplines"]}["security"], 1)
+
     def test_every_question_must_be_answered(self):
         code, out = run("screen", "--yes", "boundary")
         self.assertEqual(code, 2)

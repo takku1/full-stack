@@ -46,6 +46,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from assurance import DEFAULT_RULES, check_table, load_rules  # noqa: E402  (sibling script, stdlib only)
 
 STALE_HOURS = 24
+SCRIPTS = Path(__file__).resolve().parent
+IMPLEMENT_FLOW = SCRIPTS.parent / "flows" / "implement.md"
+# Step names match flows/implement.md's order rules, so SkillWren's ledger can check the run.
+STEP_TABLE = "verify design has a complete assurance table"
+STEP_START = "exec guard start"
+STEP_WRITE = "write implementation"
+STEP_CHECKS = "exec acceptance checks"
+STEP_CLOSE = "exec guard close"
+MILESTONES = [STEP_START, STEP_TABLE, STEP_WRITE, STEP_CHECKS, STEP_CLOSE]
+
+try:  # optional: SkillWren 0.7's run ledger (hash-chained steps checked against a flow's order rules)
+    from skillwren import ledger as sw_ledger
+except Exception:  # noqa: BLE001  (absent or incompatible: the guard works without it)
+    sw_ledger = None
 
 
 def git(*args, cwd=None):
@@ -325,6 +339,49 @@ def assurance_gaps(root, record):
     return gaps
 
 
+def has_table(record):
+    declared = record.get("assurance")
+    return isinstance(declared, dict) and bool(declared.get("file"))
+
+
+def ledger_open(root, record):
+    """Commit to implement.md's order rules before any step (SkillWren ledger `start`)."""
+    if sw_ledger is None or record.get("ledger") or not has_table(record):
+        return
+    try:
+        _run, path, _rules = sw_ledger.start(IMPLEMENT_FLOW, runs_dir(root) / "ledger",
+                                             label=record["id"], required=MILESTONES)
+        record["ledger"] = str(path)
+    except Exception as exc:  # noqa: BLE001
+        record["ledger_error"] = str(exc)
+
+
+def ledger_note(record, step, artifacts=()):
+    if sw_ledger is not None and record.get("ledger"):
+        sw_ledger.note_step(Path(record["ledger"]), step, [str(a) for a in artifacts])
+
+
+def table_gate(root, record):
+    """Runtime form of the order rule `verify design has a complete assurance table before write
+    implementation`. Returns the table's gaps; when there are none, records the passing check
+    once (as SkillWren ledger evidence when available)."""
+    if not has_table(record) or record.get("table_ok"):
+        return []
+    table = read_table(root, record["assurance"])
+    errors = [table] if isinstance(table, str) else table[2]
+    if errors:
+        return errors
+    path = Path(record["assurance"]["file"])
+    path = path if path.is_absolute() else root / path
+    argv = [sys.executable, str(SCRIPTS / "assurance.py"), "check", str(path)]
+    if sw_ledger is not None and record.get("ledger"):
+        code, _out, _err = sw_ledger.exec_step(Path(record["ledger"]), STEP_TABLE, argv)
+        if code:
+            return [f"assurance.py check exited {code}"]
+    record["table_ok"] = True
+    return []
+
+
 def describe_assurance(record):
     declared = record.get("assurance")
     if declared == "routine":
@@ -358,8 +415,15 @@ def cmd_declare(args):
         if changed:
             record["declared_after_changes"] = changed
     record["assurance"] = new
+    record.pop("table_ok", None)
+    if has_table(record) and not record.get("ledger"):
+        ledger_open(root, record)
+        ledger_note(record, STEP_START, [path])
+    gaps = table_gate(root, record)
     save(path, record)
     print(f"run {record['id']} assurance: {describe_assurance(record)}")
+    for gap in gaps:
+        print(f"table gap: {gap} (code edits stay blocked until assurance.py check passes)")
     if record.get("declared_after_changes"):
         print("note: declared after files changed; close will report it as a blocker.")
     return 0
@@ -421,9 +485,16 @@ def cmd_start(args):
         "checks": [],
         "finished": False,
     }
-    save(runs / f"{run_id}.json", record)
+    record_path = runs / f"{run_id}.json"
+    save(record_path, record)
+    ledger_open(root, record)
+    ledger_note(record, STEP_START, [record_path])
+    gaps = table_gate(root, record)
+    save(record_path, record)
     pointer(runs, root).write_text(run_id, encoding="utf-8")
     print(f"run {run_id} started; write set: {', '.join(write_set)}; {len(dirty)} pre-existing uncommitted paths recorded")
+    for gap in gaps:
+        print(f"table gap: {gap} (code edits stay blocked until assurance.py check passes)")
     if declared is None:
         print("note: no assurance declared. Beyond a routine edit, screen first (flows/assurance.md), then "
               "run_guard.py declare --assurance DESIGN.md; for a routine edit, declare --routine. "
@@ -456,17 +527,36 @@ def changes(root, record):
 
 
 def run_check(root, record, command, criterion, tail_lines):
+    """Run one check. Before the first code edit it is a reproduction (a failure seen before the
+    fix); after it, an acceptance check, recorded as SkillWren ledger evidence when available."""
     began = time.time()
-    try:
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, errors="replace")
-        code, output = result.returncode, (result.stdout + result.stderr)
-    except FileNotFoundError as exc:
-        code, output = 127, str(exc)
+    changed = changes(root, record)[0]
+    phase = "acceptance" if record.get("first_edit") or changed else "reproduction"
+    if changed and not record.get("first_edit"):
+        # Written without a hook-seen edit (a shell write, or no hooks): record the write with the
+        # changed files' digests, so the ledger holds effect evidence rather than nothing.
+        record["first_edit"] = time.time()
+        ledger_note(record, STEP_WRITE, [root / c for c in changed if (root / c).is_file()])
+    if phase == "acceptance" and sw_ledger is not None and record.get("ledger"):
+        here = os.getcwd()
+        os.chdir(root)
+        try:
+            code, out, err = sw_ledger.exec_step(Path(record["ledger"]), STEP_CHECKS, list(command))
+        finally:
+            os.chdir(here)
+        output = (out + err).decode("utf-8", errors="replace")
+    else:
+        try:
+            result = subprocess.run(command, cwd=root, capture_output=True, text=True, errors="replace")
+            code, output = result.returncode, (result.stdout + result.stderr)
+        except FileNotFoundError as exc:
+            code, output = 127, str(exc)
     tail = output.strip().splitlines()[-tail_lines:]
     record["checks"].append({
         "command": shlex.join(command),
         "criterion": criterion,
         "assurance_ids": assurance_ids(criterion),
+        "phase": phase,
         "exit": code,
         "seconds": round(time.time() - began, 2),
         "tail": tail,
@@ -550,6 +640,21 @@ def cmd_close(args):
     if gaps:
         print("\nAssurance gaps: " + "; ".join(gaps))
         problems = 1
+    # Note the close only when the run will actually finish, so a premature attempt never
+    # becomes a permanent order violation in the ledger.
+    if record.get("ledger") and sw_ledger is not None and (not problems or args.accept_blockers):
+        ledger_note(record, STEP_CLOSE, [path])
+        report = sw_ledger.check(Path(record["ledger"]))
+        broken = [f"{r['rule']}: {v['step']} ({v['reason']})" for r in report["rules"] for v in r["violations"]]
+        state = "valid" if report["valid"] else "violations"
+        print(f"\nSkillWren ledger (flows/implement.md order rules): {state}, {report['completeness']}"
+              + (f"; missing {', '.join(report['missing_milestones'])}" if report["missing_milestones"] else "")
+              + (f"; {'; '.join(broken)}" if broken else "")
+              + (f"; chain: {'; '.join(report['integrity'])}" if report["integrity"] else ""))
+        if not report["ok"]:
+            problems = 1
+        record["ledger_checked"] = True
+        save(path, record)
     if problems and not args.accept_blockers:
         print("\n[run_guard] run left open: fix the problems above, or report them as blockers "
               "and rerun close with --accept-blockers.")
@@ -666,18 +771,17 @@ def cmd_finish(args):
     return cmd_close(args)
 
 
-def open_run(root):
+def open_run(root, with_path=False):
     runs = runs_dir(root)
     latest = pointer(runs, root)
-    if not latest.exists():
-        return None
-    path = runs / f"{latest.read_text(encoding='utf-8').strip()}.json"
-    if not path.exists():
-        return None
-    record = json.loads(path.read_text(encoding="utf-8"))
-    if record.get("finished") or time.time() - record["started"] > STALE_HOURS * 3600:
-        return None
-    return record
+    found = (None, None)
+    if latest.exists():
+        path = runs / f"{latest.read_text(encoding='utf-8').strip()}.json"
+        if path.exists():
+            record = json.loads(path.read_text(encoding="utf-8"))
+            if not record.get("finished") and time.time() - record["started"] <= STALE_HOURS * 3600:
+                found = (record, path)
+    return found if with_path else found[0]
 
 
 SKILL_PROMPT = re.compile(r"(^|\s)/full-stack(:full-stack)?(\s|$)")
@@ -707,7 +811,7 @@ def cmd_hook(args):
     if probe.returncode:
         return 0
     root = Path(probe.stdout.strip())
-    record = open_run(root)
+    record, record_path = open_run(root, with_path=True)
     name = event.get("hook_event_name", "")
     session = event.get("session_id")
     # Invoking Full Stack opts the session into the guard: code edits then need a guarded run.
@@ -753,6 +857,16 @@ def cmd_hook(args):
                   "(flows/assurance.md), then run_guard.py declare --assurance DESIGN.md, or "
                   "declare --routine \"<why this is routine>\".", file=sys.stderr)
             return 2
+        if is_code(rel):
+            gaps = table_gate(root, record)
+            if gaps:
+                print("run_guard: the assurance table must pass assurance.py check before code is written "
+                      "(order rule in flows/implement.md): " + "; ".join(gaps), file=sys.stderr)
+                return 2
+            if not record.get("first_edit"):
+                record["first_edit"] = time.time()
+                ledger_note(record, STEP_WRITE)
+            save(record_path, record)
         return 0
     if name == "Stop":
         if record is None or event.get("stop_hook_active"):

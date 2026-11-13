@@ -5,6 +5,41 @@ the system is built; this flow decides which engineering disciplines must
 show evidence that it is trustworthy, and how deeply. It is selective: a
 local tool trips almost nothing, a payment system trips most of it.
 
+```contract
+inputs:
+  scope
+order:
+  exec assurance screen before read raised discipline modules
+  exec assurance screen before generate assurance table
+  exec assurance table check before return
+```
+
+```logic
+assurance:
+  exec assurance screen from scripts as screen
+  apply raised disciplines with screen as scope
+  read raised discipline modules from assurance as modules
+  apply module guidance with modules as scope
+  generate assurance table from scope as table
+  write table with design_docs
+  exec assurance table check from scripts as table_check
+  verify the table has no gaps from table_check
+    otherwise:
+      apply table repair with table as table
+      write table with design_docs
+      exec assurance table check from scripts as table_check
+      retry
+  return table as assurance
+```
+
+`exec assurance screen` is `scripts/assurance.py screen` (section 1);
+`exec assurance table check` is `scripts/assurance.py check <design file>`
+(section 4). **Raised disciplines**: the Screen line's tiers, with the
+answers that raised each. **Module guidance**: each loaded module's Policy,
+How to, and Checks at the raised tier. **Table repair**: add the missing rows or checks the check
+named, or move a claim with no possible check to blockers; never drop a
+raised discipline to silence the check.
+
 ## 1. Screen
 
 Answer every question from the request, the stack brief, and the code;

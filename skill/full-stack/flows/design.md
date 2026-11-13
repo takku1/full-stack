@@ -1,7 +1,15 @@
 # Design flow
 
-Load for any request beyond an isolated routine edit. The fenced block is
-ordered instructions, not a program; the sections below it define each step.
+Load for any request beyond an isolated routine edit. The fenced blocks are
+ordered instructions in SkillWren fragment form (checked with `skillwren
+check --fragment`), not a program; the sections below define each step.
+
+```contract
+inputs:
+  request, subject
+order:
+  exec assurance screen before generate design
+```
 
 ```logic
 design:
@@ -39,14 +47,25 @@ design:
   when a reversible ordinary choice applies:
     apply default with scope as scope
 
+  if scope contains a costly-to-reverse commitment not already authorized:
+    show scope
+    ask user to authorize the costly-to-reverse commitment
+    require user authorizes the costly-to-reverse commitment
+      otherwise:
+        apply conditional mark with scope as scope
+        return scope as design
+
   if any layer needs a technology chosen or reopened:
-    read stack flow from flows/stack.md as stack
+    run stack from flows/stack.md with:
+      request = request
+      scope = scope
     apply stack orchestration with stack as scope
 
-  read assurance flow from flows/assurance.md as assurance
-  apply assurance screen with assurance as scope
+  run assurance from flows/assurance.md with:
+    scope = scope
 
   generate design from scope as design
+  apply assurance section with assurance as design
 
   if reuse choices outside the stack flow could change the design:
     read research guide from references/research.md as guide
@@ -56,6 +75,7 @@ design:
   apply shape with patterns as design
 
   if subject has existing contracts, providers, or registries:
+    read integration guide from references/existing-projects.md as integration
     apply delta with integration as design
 
   verify design has scope, ownership and contracts, choices, assurance, increments, and blockers sections matching the selected scope
@@ -67,14 +87,9 @@ design:
     apply independent review with design as design
 
   if design contains a costly-to-reverse commitment not already authorized:
+    apply conditional mark with design as design
     show design
-    ask user to authorize the costly-to-reverse commitment
-    require user authorizes the costly-to-reverse commitment
-      otherwise:
-        apply conditional mark with design as design
-        return to finish design
-
-  label finish design:
+    return design as design
 
   if design should stay in chat:
     return design as design
@@ -109,17 +124,20 @@ design:
 - **default**: take the reversible ordinary option and record it.
 - **stack orchestration**: run [stack.md](stack.md); its decision records
   become the design's choices, and its blockers join the design's blockers.
-- **assurance screen**: run [assurance.md](assurance.md); its table becomes
-  the design's assurance section, and claims without checks join blockers.
-  When nothing is raised, the section reads "screen: all tier 0".
+- **assurance section**: the table returned by [assurance.md](assurance.md)
+  becomes the design's assurance section, and claims without checks join
+  blockers. When nothing is raised, the section reads "screen: all tier 0".
 - **independent review**: one fresh reviewer (a subagent given only the
   request, the design, and the subject's contracts) reads the design once
   and lists gaps. Fold accepted findings in; report the review apart from
   your own checks. Without a subagent, say the review did not run.
 - **readiness repair**: fill a gap from evidence, or move it to blockers
   and mark the affected work blocked.
-- **conditional mark**: mark work depending on the declined commitment
-  conditional; independent work stays ready.
+- **conditional mark**: mark work depending on the declined or not yet
+  authorized commitment conditional; independent work stays ready. A
+  commitment found after files were written is shown and marked, not asked
+  mid-flow, so a dismissal never strands half-written work (SkillWren M1);
+  the user authorizes it before building.
 - **registry update**: update this work's entry, else add one.
 
 `if`/`when` run their block when the condition holds. `require` stops

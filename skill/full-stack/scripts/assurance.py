@@ -127,8 +127,15 @@ def screen_line(result, unknown):
     return line
 
 
+def split_lists(values):
+    """Accept `--yes a b`, `--yes a --yes b`, and `--yes a,b` alike."""
+    return [v for item in values for v in item.split(",") if v.strip()]
+
+
 def cmd_screen(args):
     rules = load_rules(args.rules)
+    args.yes, args.no, args.unknown, args.high = (split_lists(args.yes), split_lists(args.no),
+                                                  split_lists(args.unknown), split_lists(args.high))
     result, errors = resolve(rules, args.yes, args.no, args.unknown, args.high, args.build)
     if errors or result is None:
         for e in errors:

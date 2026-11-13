@@ -21,6 +21,14 @@ def guard(cwd, *args):
     return result.returncode, result.stdout + result.stderr
 
 
+def skillwren_ledger_available():
+    try:
+        import skillwren.ledger  # noqa: F401
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 class RunGuardTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -388,6 +396,7 @@ class RunGuardTest(unittest.TestCase):
                      "| A-10 | verification | all paths run | skipped path | probe (tests) | t10 | unknown |\n",
                      "| A-2 | security | TLS by provider | misconfig | provider (platform) | docs link | documented |\n"])
         self.assertEqual(guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")[0], 0)
+        (self.repo / "src" / "a.py").write_text("a = 2\n")  # the build itself
         ok = f'"{sys.executable}" -c "pass"'
         guard(self.repo, "checks", "--each", f"A-10 all paths run :: {ok}")
         code, out = guard(self.repo, "close")
@@ -503,6 +512,48 @@ class RunGuardTest(unittest.TestCase):
         out = guard(self.repo, "report")[1]
         self.assertIn("| repro | pass | fail → pass |", out)
         self.assertIn("| smoke | pass | pass only |", out)
+
+    # SkillWren workflow (format 0.6 order rules, 0.7 ledger): implement.md's order rules hold at runtime.
+
+    def code_edit(self):
+        return {"hook_event_name": "PreToolUse", "tool_name": "Edit", "session_id": "s",
+                "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
+
+    def test_code_edits_wait_for_a_complete_assurance_table(self):
+        # Order rule: verify design has a complete assurance table before write implementation.
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n"])  # verification raised, no row
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        code, err = self.hook(self.code_edit())
+        self.assertEqual(code, 2)
+        self.assertIn("verification is raised to T1 but has no row", err)
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"])
+        self.assertEqual(self.hook(self.code_edit())[0], 0)
+
+    def test_checks_before_any_code_edit_are_reproductions(self):
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "r")
+        guard(self.repo, "exec", "--criterion", "repro", "--", sys.executable, "-c", "raise SystemExit(1)")
+        self.hook(self.code_edit())
+        guard(self.repo, "exec", "--criterion", "repro", "--", sys.executable, "-c", "pass")
+        record = json.loads(next((self.repo / ".git" / "full-stack-runs").glob("*.json")).read_text(encoding="utf-8"))
+        self.assertEqual([c["phase"] for c in record["checks"]], ["reproduction", "acceptance"])
+
+    @unittest.skipUnless(skillwren_ledger_available(), "SkillWren ledger not importable")
+    def test_skillwren_ledger_checks_the_runs_order(self):
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        self.assertEqual(self.hook(self.code_edit())[0], 0)
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        guard(self.repo, "checks", "--each", f"A-1 c :: {self.OK}", "--each", f"A-2 c :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+        self.assertIn("SkillWren ledger (flows/implement.md order rules): valid, complete", out)
+        ledger = next((self.repo / ".git" / "full-stack-runs" / "ledger").glob("*.jsonl"))
+        steps = [json.loads(l).get("step") for l in ledger.read_text(encoding="utf-8").splitlines()][1:]
+        self.assertEqual(steps, ["exec guard start", "verify design has a complete assurance table",
+                                 "write implementation", "exec acceptance checks", "exec acceptance checks",
+                                 "exec guard close"])
 
     def test_start_rejects_missing_assurance_file(self):
         code, out = guard(self.repo, "start", "--write-set", "src/", "--assurance", "nope.md")

@@ -4,6 +4,16 @@ Load only when building was requested. Without a build request, stop at the
 design. The fenced block is ordered instructions; the sections below define
 each step.
 
+```contract
+inputs:
+  request, criteria, design, subject
+order:
+  verify design has a complete assurance table before write implementation
+  exec guard start before write implementation
+  write implementation before exec acceptance checks
+  exec acceptance checks before exec guard close
+```
+
 ```logic
 implement:
   require request exists
@@ -24,8 +34,15 @@ implement:
       request = request
 
   apply recheck with design as design
-  apply ready selection with design as selected
+  exec assurance table check from scripts as table_check
+  verify design has a complete assurance table from table_check
+    otherwise:
+      apply assurance repair with design as design
+      write design with design_docs
+      exec assurance table check from scripts as table_check
+      retry
 
+  apply ready selection with design as selected
   read implementation guide from references/implementation.md as guide
   generate implementation from selected as implementation
   apply build method with guide as implementation
@@ -35,33 +52,37 @@ implement:
     read contracts from subject as contracts
     apply fit with contracts as implementation
 
-  apply write set with implementation as claim
-  write claim with run_log
-  verify run_log shows no collision with outside edits or open runs
+  apply write set with implementation as implementation
+  exec guard start from scripts as started
+  verify the run started with no collision from started
     otherwise:
       apply collision resolution with implementation as implementation
-      apply write set with implementation as claim
-      write claim with run_log
+      apply write set with implementation as implementation
+      exec guard start from scripts as started
       retry
 
   write implementation with subject
-  apply check plan with criteria as checks
-  write checks with run_log
-
-  verify run_log shows every change inside the write set and each acceptance criterion met or blocked by an executed check
+  apply check plan with criteria as implementation
+  exec acceptance checks from scripts as results
+  verify each acceptance criterion and assurance row passed or is a reported blocker from results
     otherwise:
       apply correction with implementation as implementation
       write implementation with subject
-      write checks with run_log
+      exec acceptance checks from scripts as results
       retry
 
   if subject has a work tracker:
     apply registry update with implementation as entry
     write entry with registry
-  read run report from run_log as evidence
-  generate completion report from evidence as completion
-  apply run close with claim as claim
-  write claim with run_log
+  exec guard close from scripts as closed
+  verify the run closed with clean scope or reported blockers from closed
+    otherwise:
+      apply correction with implementation as implementation
+      write implementation with subject
+      exec acceptance checks from scripts as results
+      exec guard close from scripts as closed
+      retry
+  generate completion report from closed as completion
   if subject uses Recurspec:
     apply node evidence proposal with implementation as completion
 
@@ -74,7 +95,17 @@ implement:
 
 `scripts/run_guard.py` (Python 3, git) enforces scope and evidence claims;
 its log, not memory, is the record. With the plugin's hooks, a session that
-invokes Full Stack cannot edit code until a guarded run is open. A guarded run takes three calls:
+invokes Full Stack cannot edit code until a guarded run is open. The `exec` steps
+map to these commands (run them with `python3`, `python`, or `py -3`):
+
+| Step | Command |
+|---|---|
+| `exec assurance table check` | `scripts/assurance.py check <design file>` |
+| `exec guard start` | `scripts/run_guard.py start ...` (below) |
+| `exec acceptance checks` | `scripts/run_guard.py checks ...` (below) |
+| `exec guard close` | `scripts/run_guard.py close` (below) |
+
+A guarded run takes three calls:
 
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
    --label <work ID> --assurance <design file>`, or `--routine "<why>"` for
@@ -99,6 +130,14 @@ invokes Full Stack cannot edit code until a guarded run is open. A guarded run t
    before passing; reproduce a failure first where you can. If not, fix the problem, or
    report it as a blocker and rerun with `--accept-blockers`.
 
+The guard holds this flow's `order:` rules at runtime, not only on paper:
+code edits wait until the declared assurance table passes `assurance.py
+check`; a check run before any code edit is recorded as a reproduction, not
+an acceptance check; and when SkillWren is installed, the guard writes a
+SkillWren run ledger (`.git/full-stack-runs/ledger/`) committed to this
+file's order rules, and `close` refuses a run whose ledger shows a step out
+of order or a missing milestone.
+
 Without the guard, check with `git status` and `git diff` and say the run
 was unguarded. When taking over someone else's uncommitted work,
 `run_guard.py report --all` shows which earlier runs closed with passing
@@ -111,6 +150,9 @@ is a scope change and goes back to the user.
 
 ## Step meanings
 
+- **assurance repair**: run [assurance.md](assurance.md) on the design and
+  fill the gaps `assurance.py check` reported; never edit the check's input
+  to make it pass.
 - **recheck**: confirm a supplied design's facts still hold; revise only
   stale parts; settled decisions stay settled.
 - **ready selection**: build only ready work; report conditional and

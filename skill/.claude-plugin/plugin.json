@@ -1,6 +1,6 @@
 {
   "name": "full-stack",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Design, and build when asked, changes spanning components, state, or contracts, choosing technologies layer by layer under one orchestrator, with risk-tiered assurance (security, verification, reliability, and more). Bundles the full-stack skill, an automatic run-guard hook, and a low-cost evidence subagent.",
   "author": { "name": "takku1" },
   "repository": "https://github.com/takku1/full-stack",

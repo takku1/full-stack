@@ -7,6 +7,62 @@ final choice. Layer modules supply method; they never decide alone, because
 layer choices are coupled and the best choice in isolation can break a
 neighbor.
 
+```contract
+inputs:
+  request, scope
+order:
+  exec stack profiles before generate decision records
+  exec stack check before return records
+```
+
+```logic
+stack:
+  generate stack brief from request and scope as brief
+  if every layer is keep current:
+    return brief as stack
+
+  read affected layer modules from layers as modules
+  generate candidate sets from brief as candidates
+  apply layer method with modules as candidates
+  if candidates include a costly-to-reverse commitment not already authorized:
+    show candidates
+    ask user to authorize each costly-to-reverse commitment as authorization
+    apply conditional mark with authorization as candidates
+
+  write candidates with stack_file
+  exec stack profiles from scripts as profiles
+  verify at least one joint profile survives from profiles
+    otherwise:
+      apply candidate revision with candidates as candidates
+      write candidates with stack_file
+      exec stack profiles from scripts as profiles
+      retry
+
+  apply profile choice with profiles as profile
+  generate decision records from profile as records
+  write records with stack_file
+  exec stack check from scripts as consistency
+  verify the committed profile is consistent from consistency
+    otherwise:
+      apply stack repair with records as records
+      write records with stack_file
+      exec stack check from scripts as consistency
+      retry
+  return records as stack
+```
+
+`exec stack profiles` is `scripts/check_stack.py profiles <file>` (section
+3) and `exec stack check` is `scripts/check_stack.py check <file>` (section
+6); `stack_file` is the design file holding the ` ```json stack ` block.
+**Candidate revision**: revise a candidate set or the brief, never the
+evidence. **Layer method**: each affected module's questions and evidence
+rules (section 2). **Profile choice**: section 3's ordering. **Conditional
+mark**: declined commitments make dependent candidates and layers
+conditional (section 4). Authorization comes before anything is written or
+run, so a dismissal leaves nothing behind (SkillWren dismissal safety, M1).
+**Stack repair**: change a choice, or mark the assuming layer conditional
+or blocked with the gap listed as a blocker.
+
 ## 1. Write the stack brief
 
 Fill [the stack brief](../templates/stack-brief.md) once; only the
@@ -76,8 +132,9 @@ Layers never pick their own optimum independently of this step.
 ## 4. Authorize
 
 A new datastore, language, hosting platform, paid service, or public
-contract is usually costly to reverse. Show the profile and ask the user to
-authorize each such commitment. Declined commitments mark the dependent
+contract is usually costly to reverse. Ask once the candidate sets are
+named, before writing the stack block or running the check: show the
+candidates that carry such a commitment and ask the user to authorize each. Declined commitments mark the dependent
 layers conditional; continue with independent ones. Dismissed means stop
 and show the profile in chat with nothing written.
 

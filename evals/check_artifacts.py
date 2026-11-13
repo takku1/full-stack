@@ -113,6 +113,25 @@ def check_assurance(skill):
     return errors
 
 
+def check_fragments(skill):
+    """SkillWren fragment check (format 0.6+) on every flow: errors fail, warnings fail too, because
+    each flow is kept warning-free. Skipped with a notice when SkillWren is unavailable."""
+    import subprocess
+    try:
+        import skillwren.validator  # noqa: F401
+    except Exception:  # noqa: BLE001
+        print("SkillWren unavailable; flow fragments not checked.")
+        return []
+    flows = sorted((skill / "flows").glob("*.md"))
+    result = subprocess.run([sys.executable, "-m", "skillwren", "check", "--fragment", *map(str, flows)],
+                            capture_output=True, text=True)
+    out = (result.stdout + result.stderr).strip()
+    problems = [line for line in out.splitlines() if " error " in line or " warning " in line]
+    if result.returncode or problems:
+        return [f"SkillWren fragment check: {line}" for line in (problems or [out])]
+    return []
+
+
 def check_plugin(root):
     """Plugin root is skill/; the marketplace at the repo root points to it."""
     errors = []
@@ -171,6 +190,7 @@ def main() -> int:
     errors += check_rules(skill)
     errors += check_plugin(root)
     errors += check_assurance(skill)
+    errors += check_fragments(skill)
     entry = skill / "SKILL.md"
     if entry.is_file():
         # Hosts parse the header with a general YAML parser, which is stricter than
