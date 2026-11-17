@@ -12,7 +12,7 @@ inputs:
   request, scope
 order:
   exec stack profiles before generate decision records
-  exec stack check before return records
+  verify#consistency before return#records
 ```
 
 ```logic
@@ -42,13 +42,13 @@ stack:
   generate decision records from profile as records
   write records with stack_file
   exec stack check from scripts as consistency
-  verify the committed profile is consistent from consistency
+  verify #consistency the committed profile is consistent from consistency
     otherwise:
       apply stack repair with records as records
       write records with stack_file
       exec stack check from scripts as consistency
       retry
-  return records as stack
+  return #records records as stack
 ```
 
 `exec stack profiles` is `scripts/check_stack.py profiles <file>` (section

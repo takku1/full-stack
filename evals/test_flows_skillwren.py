@@ -1,6 +1,6 @@
 """Check full-stack's flow files with SkillWren's fragment checker, and prove the order rules bite.
 
-SkillWren (Z:\\skillwren, format 0.6+) checks `logic` blocks embedded in Markdown with
+SkillWren (Z:\\skillwren, format 0.9+ for typed `return #id` anchors) checks `logic` blocks embedded in Markdown with
 `skillwren check --fragment`: definite binding, dismissal safety, order rules (P1), and more.
 Each flow must be clean, and each one-break mutant (an order rule's earlier step removed,
 moved, or made conditional) must be rejected, so a clean result means something.
@@ -56,16 +56,24 @@ MUTANTS = {
     "stack: final check dropped": (
         "stack.md",
         "  exec stack check from scripts as consistency\n"
-        "  verify the committed profile is consistent from consistency\n"
+        "  verify #consistency the committed profile is consistent from consistency\n"
         "    otherwise:\n"
         "      apply stack repair with records as records\n"
         "      write records with stack_file\n"
         "      exec stack check from scripts as consistency\n"
         "      retry\n", "", "P1"),
+    "assurance: check run but its verdict ignored (typed return anchor)": (
+        "assurance.md",
+        "  verify #table the table has no gaps from table_check\n"
+        "    otherwise:\n"
+        "      apply table repair with table as table\n"
+        "      write table with design_docs\n"
+        "      exec assurance table check from scripts as table_check\n"
+        "      retry\n", "", "P1"),
     "assurance: table returned unchecked": (
         "assurance.md",
         "  exec assurance table check from scripts as table_check\n"
-        "  verify the table has no gaps from table_check\n"
+        "  verify #table the table has no gaps from table_check\n"
         "    otherwise:\n"
         "      apply table repair with table as table\n"
         "      write table with design_docs\n"

@@ -11,7 +11,7 @@ inputs:
 order:
   exec assurance screen before read raised discipline modules
   exec assurance screen before generate assurance table
-  exec assurance table check before return
+  verify#table before return#assurance
 ```
 
 ```logic
@@ -23,13 +23,13 @@ assurance:
   generate assurance table from scope as table
   write table with design_docs
   exec assurance table check from scripts as table_check
-  verify the table has no gaps from table_check
+  verify #table the table has no gaps from table_check
     otherwise:
       apply table repair with table as table
       write table with design_docs
       exec assurance table check from scripts as table_check
       retry
-  return table as assurance
+  return #assurance table as assurance
 ```
 
 `exec assurance screen` is `scripts/assurance.py screen` (section 1);
