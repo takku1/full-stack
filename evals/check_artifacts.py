@@ -114,14 +114,19 @@ def check_assurance(skill):
 
 
 def check_fragments(skill):
-    """SkillWren fragment check (format 0.6+) on every flow: errors fail, warnings fail too, because
-    each flow is kept warning-free. Skipped with a notice when SkillWren is unavailable."""
+    """SkillWren fragment check (0.9+, for typed `return #id` anchors) on every flow: errors fail,
+    warnings fail too, because each flow is kept warning-free. Skipped with a notice when SkillWren
+    is unavailable; an older SkillWren is reported as an error rather than as parse failures."""
     import subprocess
     try:
+        import skillwren
         import skillwren.validator  # noqa: F401
     except Exception:  # noqa: BLE001
         print("SkillWren unavailable; flow fragments not checked.")
         return []
+    found = tuple(int(p) for p in re.findall(r"\d+", getattr(skillwren, "__version__", "0"))[:2])
+    if found < (0, 9):
+        return [f"SkillWren {skillwren.__version__} found; the flows need 0.9 or later (typed return anchors)"]
     flows = sorted((skill / "flows").glob("*.md"))
     result = subprocess.run([sys.executable, "-m", "skillwren", "check", "--fragment", *map(str, flows)],
                             capture_output=True, text=True)

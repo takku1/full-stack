@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, plugin packaging in D-019, and the assurance dimension (package 0.5.0) in D-020. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, plugin packaging in D-019, and the assurance dimension (package 0.5.0) in D-020; D-021 to D-024 record later packages through 0.8.1. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 
@@ -218,3 +218,14 @@ Not adopted: SkillWren's `guard` controller and `sandbox` (they need a trusted h
 Inspection date: 2026-09-09. Recurspec HEAD: `8374c2bd1d373766ca7e66293dee44698d541612`. Architectural Reasoning frontmatter version: `1.3.0`; its local checkout had no resolvable HEAD during inspection, and the public repository's only 1.3.0 state before that date is `1e96a46360515db8774ba872d1d891e8209860ab`, which the links above pin. These identify inspected baselines, not a claim that either working tree was clean.
 
 Relevant files: Recurspec `README.md`, `CONTEXT.md`, bundled `SKILL.md`, `references/design.md`, and `references/resolve.md`; Architectural Reasoning `SKILL.md`, `references/subsystem-specification.md`, and `references/architectural-philosophies.md`. Instructions are adapted selectively; the portable package retains [upstream notices](../skill/full-stack/NOTICE.md).
+
+## D-024: Track SkillWren 0.9 (package 0.8.1)
+
+Status: done 2026-11-19 at the owner's request ("get this all done") after a review of SkillWren 0.8.0, 0.9.0, and unreleased 0.10 work at `Z:\skillwren` against D-023. Owner exception to the feature freeze; no runtime behavior changed.
+
+- **Typed return anchors adopted** (SkillWren 0.9, SPEC Section 21; [PR #1](https://github.com/takku1/full-stack/pull/1), suggested by SkillWren). `assurance` and `stack` now state their final rules as `verify#table before return#assurance` and `verify#consistency before return#records`, so the gate's verdict, not just the check run, must precede the exit. A new mutant (check run, verdict ignored) passed the old rule with only a W5 and now fails with P1. The flows therefore need SkillWren 0.9 or later: `evals/check_artifacts.py` reports an older SkillWren as an error, and `evals/test_flows_skillwren.py` skips below 0.9.
+- **`implement` rules left as statement text.** The run guard names ledger steps after those statements; renaming them to typed references would change the guard and its ledger tests for no new guarantee. SkillWren 0.9's ledger fix (typed-reference step names now match rules) does not affect this package today.
+- **Verified compatible, not adopted into packaging.** `skillwren build skill/full-stack` packages the fragment set cleanly (4 fragments checked, 40 files, no warnings), and the guard's 0.7 ledger calls work unchanged on 0.9 (the ledger test passes). Distribution stays the Claude Code plugin (D-019).
+- **Not adopted.** `exec readonly`: the four script calls only read, but the marker is a claim that dismissal safety (M1) then skips, enforced only by `ledger exec --readonly` in a sandbox this package does not use (D-023); the costly-commitment ask already precedes every `exec`, so it would buy nothing. `skillwren approve`: approval binds a human to exact flow bytes, so it is the owner's act, not the agent's; every flow edit would invalidate it. SkillWren 0.9's recommended inline form (logic in `SKILL.md`): it would load every flow on every run, against D-017's small core (about 720 tokens) and FS-009's evidence; SkillWren's 72-run finding (agents follow whichever single form is present) does not show inline beats on-demand fragments. SkillWren 0.10 work (`compile`, `inventory`, `select`, `certgate`) serves SkillWren's authoring and selection research, not a consuming skill.
+
+Revisit `implement`'s typed references if the guard's ledger step names change for another reason, and `approve` if the owner wants approval-bound flows.

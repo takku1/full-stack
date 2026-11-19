@@ -19,11 +19,14 @@ FLOWS = ["design.md", "implement.md", "assurance.md", "stack.md"]
 
 
 def _have_skillwren():
+    """True when SkillWren 0.9+ is importable (the flows use 0.9's typed return anchors)."""
     try:
+        import re
+        import skillwren
         import skillwren.validator  # noqa: F401
-        return True
     except Exception:  # noqa: BLE001
         return False
+    return tuple(int(p) for p in re.findall(r"\d+", getattr(skillwren, "__version__", "0"))[:2]) >= (0, 9)
 
 
 HAVE_SKILLWREN = _have_skillwren()
@@ -82,7 +85,7 @@ MUTANTS = {
 }
 
 
-@unittest.skipUnless(HAVE_SKILLWREN, "SkillWren not importable; fragment checks skipped")
+@unittest.skipUnless(HAVE_SKILLWREN, "SkillWren 0.9+ not importable; fragment checks skipped")
 class FlowFragmentTest(unittest.TestCase):
     def test_every_flow_is_clean_without_warnings(self):
         code, out = check(*(SKILL / "flows" / f for f in FLOWS))
