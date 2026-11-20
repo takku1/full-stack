@@ -145,6 +145,14 @@ class CheckTest(unittest.TestCase):
         self.assertIn("V-1: row IDs must be A-<n>", out)
         self.assertNotIn("A-1: row IDs", out)
 
+    def test_help_lists_every_screen_question(self):
+        # MochiOS field use 2026-11-19 (F-2): `screen --help` named no questions, so the only way
+        # to learn them was a failing call.
+        code, out = run("screen", "--help")
+        self.assertEqual(code, 0, out)
+        for q in QUESTIONS:
+            self.assertIn(q, out)
+
     def test_missing_screen_line_is_a_gap(self):
         code, out = self.check("| A-1 | security | c | f | x (y) | t | tested |\n")
         self.assertEqual(code, 1)

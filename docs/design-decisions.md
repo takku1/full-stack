@@ -1,6 +1,6 @@
 # Design decisions
 
-These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, plugin packaging in D-019, and the assurance dimension (package 0.5.0) in D-020; D-021 to D-024 record later packages through 0.8.2. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
+These decisions record the initial 0.1.0 design, the 0.2.0 extension in D-011/D-012, the logic entrypoint in D-013/D-014, package 0.3.0 in D-015/D-016, the modular layer redesign (package 0.4.0) in D-017, cost optimization in D-018, plugin packaging in D-019, and the assurance dimension (package 0.5.0) in D-020; D-021 to D-024 record later packages through 0.8.3. They are project conventions motivated by the [research](research/foundations.md), not claims of experimentally demonstrated superiority.
 
 ## D-001: Create a standalone design skill
 

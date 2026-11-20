@@ -219,7 +219,14 @@ def cmd_check(args):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="assurance", description="Resolve the assurance screen and check an assurance table.")
     sub = parser.add_subparsers(dest="cmd", required=True)
-    p = sub.add_parser("screen", help="resolve screen answers into disciplines and tiers")
+    try:  # name every question in --help (MochiOS field use 2026-11-19, F-2)
+        asks = load_rules(DEFAULT_RULES)["questions"].items()
+        epilog = "questions (answer each with --yes, --no or --unknown):\n" + "\n".join(
+            f"  {qid:15} {q['ask']}" for qid, q in asks)
+    except SystemExit:
+        epilog = None
+    p = sub.add_parser("screen", help="resolve screen answers into disciplines and tiers", epilog=epilog,
+                       formatter_class=argparse.RawDescriptionHelpFormatter)
     for flag in ("--yes", "--no", "--unknown"):
         p.add_argument(flag, nargs="+", action="extend", default=[], metavar="QUESTION")
     p.add_argument("--high", nargs="+", action="extend", default=[], metavar="DISCIPLINE",

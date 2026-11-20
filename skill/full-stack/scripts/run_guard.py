@@ -266,11 +266,16 @@ def assurance_ids(criterion):
     return seen
 
 
+def acceptance_checks(record):
+    """Checks that count toward acceptance: all but marked reproductions (F-7)."""
+    return [c for c in record["checks"] if not c.get("reproduce")]
+
+
 def latest_for(record, row_id):
     """The most recent executed check that names the row, or None. Only the latest counts, so an
     earlier pass cannot cover a later failure (external review 3, finding 4)."""
     latest = None
-    for c in record["checks"]:
+    for c in acceptance_checks(record):
         ids = c.get("assurance_ids")
         if ids is None:
             ids = assurance_ids(c.get("criterion"))
@@ -411,7 +416,9 @@ def cmd_declare(args):
             return 2
         new["downgraded_from"] = old["file"]
     if not old:
-        changed = changes(root, record)[0]
+        # Only code changes make a declaration late: the design note holding the table is
+        # written in the run before it is declared (MochiOS field use 2026-11-19, F-4).
+        changed = [p for p in changes(root, record)[0] if is_code(p)]
         if changed:
             record["declared_after_changes"] = changed
     record["assurance"] = new
@@ -526,13 +533,15 @@ def changes(root, record):
     return sorted(changed), sorted(touched), outside
 
 
-def run_check(root, record, command, criterion, tail_lines):
+def run_check(root, record, command, criterion, tail_lines, reproduce=False):
     """Run one check. Before the first code edit it is a reproduction (a failure seen before the
-    fix); after it, an acceptance check, recorded as SkillWren ledger evidence when available."""
+    fix); after it, an acceptance check, recorded as SkillWren ledger evidence when available.
+    `reproduce` marks a test-first reproduction run after its test was written (F-7): it is
+    reported, never counted as acceptance for a criterion or an assurance row."""
     began = time.time()
     changed = changes(root, record)[0]
-    phase = "acceptance" if record.get("first_edit") or changed else "reproduction"
-    if changed and not record.get("first_edit"):
+    phase = "acceptance" if (record.get("first_edit") or changed) and not reproduce else "reproduction"
+    if changed and not record.get("first_edit") and not reproduce:
         # Written without a hook-seen edit (a shell write, or no hooks): record the write with the
         # changed files' digests, so the ledger holds effect evidence rather than nothing.
         record["first_edit"] = time.time()
@@ -555,8 +564,9 @@ def run_check(root, record, command, criterion, tail_lines):
     record["checks"].append({
         "command": shlex.join(command),
         "criterion": criterion,
-        "assurance_ids": assurance_ids(criterion),
+        "assurance_ids": [] if reproduce else assurance_ids(criterion),
         "phase": phase,
+        "reproduce": reproduce,
         "exit": code,
         "seconds": round(time.time() - began, 2),
         "tail": tail,
@@ -572,7 +582,7 @@ def cmd_exec(args):
     if not command:
         print("run_guard: give the check command after --.", file=sys.stderr)
         return 2
-    code, tail = run_check(root, record, command, args.criterion, args.tail)
+    code, tail = run_check(root, record, command, args.criterion, args.tail, args.reproduce)
     save(path, record)
     print("\n".join(tail))
     print(f"[run_guard] exit {code}: {shlex.join(command)}")
@@ -608,7 +618,7 @@ def cmd_checks(args):
         return 2
     failed = 0
     for criterion, command in plan:
-        code, tail = run_check(root, record, command, criterion, args.tail)
+        code, tail = run_check(root, record, command, criterion, args.tail, args.reproduce)
         save(path, record)
         status = "PASS" if code == 0 else f"FAIL (exit {code})"
         print(f"[run_guard] {status}: {criterion or ''} :: {shlex.join(command)}")
@@ -630,8 +640,11 @@ def cmd_close(args):
     # The latest result per criterion counts, so a corrected rerun replaces an earlier failure.
     # Before this, close finished runs whose checks had failed (FS-023 defect D3).
     latest = {}
-    for c in record["checks"]:
+    for c in acceptance_checks(record):
         latest[c["criterion"] or c["command"]] = c
+    if record["checks"] and not latest:
+        print("\nNo acceptance checks were recorded (only reproductions).")
+        problems = 1
     failed = [name for name, c in latest.items() if c["exit"] != 0]
     if failed:
         print("\nFailing checks: " + "; ".join(failed))
@@ -744,8 +757,14 @@ def cmd_report(args):
     if not record["checks"]:
         print("| none executed | | | |")
     exits = {}
-    for c in record["checks"]:
+    for c in acceptance_checks(record):
         exits.setdefault(c["criterion"] or c["command"], []).append(c["exit"])
+    repros = [c for c in record["checks"] if c.get("reproduce")]
+    if repros:
+        # Evidence that the failure existed before the fix; a passing reproduction reproduced nothing.
+        print("\n| Reproductions (not acceptance) | Exit | Reproduced |\n|---|---|---|")
+        for c in repros:
+            print(f"| {c['criterion'] or c['command']} | {c['exit']} | {'yes' if c['exit'] else 'no: it passed'} |")
     if exits:
         # A criterion seen failing before it passed shows the check can detect its failure.
         print("\n| Criterion | Latest | History |\n|---|---|---|")
@@ -758,7 +777,7 @@ def cmd_report(args):
             tiers, rows, _errors = table
             print("\n| Assurance row | Tier | Declared evidence | Executed (latest) | History |\n|---|---|---|---|---|")
             for row in rows:
-                runs = [c["exit"] for c in record["checks"]
+                runs = [c["exit"] for c in acceptance_checks(record)
                         if row["id"] in (c.get("assurance_ids") or assurance_ids(c.get("criterion")))]
                 latest = "none" if not runs else ("pass" if runs[-1] == 0 else f"fail (exit {runs[-1]})")
                 print(f"| {row['id']} | {tiers.get(row['discipline'], 0)} | {row['evidence'] or 'none'} | "
@@ -852,7 +871,8 @@ def cmd_hook(args):
             print(f"run_guard: {rel} is outside this run's write set ({', '.join(record['write_set'])}). "
                   "Narrow the change, or finish this run and start one that claims it.", file=sys.stderr)
             return 2
-        if not record.get("assurance"):
+        if not record.get("assurance") and is_code(rel):
+            # Design notes stay free until declared, as before a run (F-6); code waits.
             print("run_guard: declare this run's assurance before editing (external review 3): screen first "
                   "(flows/assurance.md), then run_guard.py declare --assurance DESIGN.md, or "
                   "declare --routine \"<why this is routine>\".", file=sys.stderr)
@@ -911,6 +931,8 @@ def main(argv=None):
     p = sub.add_parser("exec")
     p.add_argument("--run")
     p.add_argument("--criterion", help="acceptance criterion this check evidences")
+    p.add_argument("--reproduce", action="store_true",
+                   help="a test-first reproduction expected to fail; reported, never counted as acceptance")
     p.add_argument("--tail", type=int, default=20)
     p.add_argument("command", nargs=argparse.REMAINDER)
     p = sub.add_parser("checks", help="run several acceptance checks in one call")
@@ -920,6 +942,8 @@ def main(argv=None):
                         "words and are removed. Put pipes, redirects, or commands that need their "
                         "own quoting (powershell -Command, sh -c) in a script file, or use --plan")
     p.add_argument("--plan", help="JSON list of {criterion, command}; an argv array is passed unchanged")
+    p.add_argument("--reproduce", action="store_true",
+                   help="these are test-first reproductions expected to fail; reported, never counted as acceptance")
     p.add_argument("--tail", type=int, default=20)
     sub.add_parser("check").add_argument("--run")
     p = sub.add_parser("report", help="report this run, or --all runs")

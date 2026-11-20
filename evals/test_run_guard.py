@@ -378,6 +378,72 @@ class RunGuardTest(unittest.TestCase):
         sh(self.repo, "git", "commit", "-qm", "design")
         return path
 
+    def test_design_note_written_in_the_run_then_declared_is_not_late(self):
+        # MochiOS field use 2026-11-19 (F-4): writing the design note before `start` makes the
+        # guard demand a user-confirmed --adopt; starting first and declaring after the table is
+        # written is the clean order, but `declare` called the note itself a late change.
+        guard(self.repo, "start", "--write-set", "src/", "design.md")
+        path = self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                            "| A-2 | verification | d | f | x (y) | t2 | unknown |\n"])
+        sh(self.repo, "git", "reset", "-q", "--soft", "HEAD~1")  # the note stays uncommitted, as in use
+        sh(self.repo, "git", "reset", "-q", "design.md")
+        code, out = guard(self.repo, "declare", "--assurance", "design.md")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("declared after files changed", out)
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        path.write_text(path.read_text().replace("unknown", "tested"))  # evidence update in-run
+        guard(self.repo, "checks", "--each", f"A-1 c :: {self.OK}", "--each", f"A-2 d :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+        self.assertIn("Scope violations: none", out)
+
+    def test_code_changed_before_declaring_is_still_late(self):
+        guard(self.repo, "start", "--write-set", "src/", "design.md")
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n"])
+        code, out = guard(self.repo, "declare", "--assurance", "design.md")
+        self.assertIn("declared after files changed", out)
+
+    def test_hook_lets_design_notes_through_an_undeclared_run(self):
+        # F-6: with a run open but undeclared, the hook refused the design note that the
+        # declaration needs, so neither order worked. Code stays blocked until declared.
+        guard(self.repo, "start", "--write-set", "src/", "docs/")
+        note = {"hook_event_name": "PreToolUse", "tool_name": "Write",
+                "tool_input": {"file_path": str(self.repo / "docs" / "design.md")}}
+        code_edit = {"hook_event_name": "PreToolUse", "tool_name": "Edit",
+                     "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
+        self.assertEqual(self.hook(note)[0], 0)
+        code, err = self.hook(code_edit)
+        self.assertEqual(code, 2)
+        self.assertIn("declare this run's assurance", err)
+
+    def test_marked_reproduction_is_evidence_not_a_failing_acceptance_check(self):
+        # MochiOS field use 2026-11-19 (F-7): a test-first reproduction, run after the test was
+        # written, stayed a failing criterion and refused close; the last four MochiOS runs show
+        # the same pattern. A marked reproduction is reported, never counted as acceptance.
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | d | f | x (y) | t2 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        (self.repo / "src" / "a.py").write_text("a = 2\n")  # the new test, written first
+        guard(self.repo, "checks", "--reproduce", "--each", f"A-1 bug shows :: {self.BAD}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)  # a reproduction alone never covers A-1
+        self.assertIn("assurance A-1 (security) has no executed check", out)
+        guard(self.repo, "checks", "--each", f"A-1 fixed :: {self.OK}", "--each", f"A-2 d :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+        self.assertIn("Reproductions", out)
+        self.assertIn("A-1 bug shows", out)
+        self.assertNotIn("Failing checks", out)
+
+    def test_a_run_with_only_reproductions_does_not_close(self):
+        guard(self.repo, "start", "--write-set", "src/")
+        guard(self.repo, "declare", "--routine", "test")
+        guard(self.repo, "exec", "--reproduce", "--criterion", "bug", "--", sys.executable, "-c", "raise SystemExit(1)")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 1, out)
+        self.assertIn("No acceptance checks", out)
+
     def test_close_refuses_until_assurance_is_declared(self):
         # Field report 3, G1: the screen was skipped in both live builds; close now asks for it.
         out = guard(self.repo, "start", "--write-set", "src/")[1]

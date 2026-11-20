@@ -109,15 +109,20 @@ A guarded run takes three calls:
 
 1. **write set + write claim**: `run_guard.py start --write-set <paths>
    --label <work ID> --assurance <design file>`, or `--routine "<why>"` for
-   a routine edit with no assurance table. The hook blocks edits until one
-   is declared (`declare` sets it later); declaring after files changed,
+   a routine edit with no assurance table. The hook blocks code edits until
+   one is declared (`declare` sets it later); declaring after code changed,
    or replacing a table with `--routine` (needs `--override`), is reported.
+   When this run writes the design note, start first with the note in the
+   write set, write the table, then `declare --assurance <note>`: a note
+   written before `start` is an uncommitted edit only the user can adopt.
    Exit 3 is a collision. `--shared` claims files other workers also edit.
 2. **check plan + write checks**: all acceptance checks, including every
    check in the design's assurance table, in one call,
    `run_guard.py checks --each "<criterion> :: <command>" --each ...`
    (or `--plan checks.json`). Name each assurance row's ID in its
-   criterion (`"A-1 <claim> :: <command>"`). Rerun it after a correction. Each command is
+   criterion (`"A-1 <claim> :: <command>"`). Rerun it after a correction. A
+   test-first failure run after its test is written goes through
+   `checks --reproduce`: reported as a reproduction, never as acceptance. Each command is
    split like a POSIX shell and run without one, so quotes are removed:
    put pipes, redirects, and `powershell -Command` or `sh -c` one-liners in
    a script file, or give `--plan` an argv array. Repeat or list paths
