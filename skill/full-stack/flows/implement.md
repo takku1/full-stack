@@ -12,6 +12,8 @@ order:
   exec guard start before write implementation
   write implementation before exec acceptance checks
   exec acceptance checks before exec guard close
+  never write * with design_docs before exec guard start
+  never write * with registry before exec guard start
 ```
 
 ```logic
@@ -34,14 +36,6 @@ implement:
       request = request
 
   apply recheck with design as design
-  exec assurance table check from scripts as table_check
-  verify design has a complete assurance table from table_check
-    otherwise:
-      apply assurance repair with design as design
-      write design with design_docs
-      exec assurance table check from scripts as table_check
-      retry
-
   apply ready selection with design as selected
   read implementation guide from references/implementation.md as guide
   generate implementation from selected as implementation
@@ -59,6 +53,15 @@ implement:
       apply collision resolution with implementation as implementation
       apply write set with implementation as implementation
       exec guard start from scripts as started
+      retry
+
+  write design with design_docs
+  exec assurance table check from scripts as table_check
+  verify design has a complete assurance table from table_check
+    otherwise:
+      apply assurance repair with design as design
+      write design with design_docs
+      exec assurance table check from scripts as table_check
       retry
 
   write implementation with subject

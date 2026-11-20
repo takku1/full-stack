@@ -70,7 +70,7 @@ MUTANTS = {
         "  verify #table the table has no gaps from table_check\n"
         "    otherwise:\n"
         "      apply table repair with table as table\n"
-        "      write table with design_docs\n"
+        "      write table with table_draft\n"
         "      exec assurance table check from scripts as table_check\n"
         "      retry\n", "", "P1"),
     "assurance: table returned unchecked": (
@@ -79,9 +79,23 @@ MUTANTS = {
         "  verify #table the table has no gaps from table_check\n"
         "    otherwise:\n"
         "      apply table repair with table as table\n"
-        "      write table with design_docs\n"
+        "      write table with table_draft\n"
         "      exec assurance table check from scripts as table_check\n"
         "      retry\n", "", "P1"),
+    # Exclusion rules (SkillWren 0.10 P3): nothing is filed into the design note or the
+    # registry before the guarded run starts (field report 4, F-4).
+    "implement: design note filed before the guard starts (F-4)": (
+        "implement.md",
+        "  apply recheck with design as design\n",
+        "  apply recheck with design as design\n  write design with design_docs\n", "P3"),
+    "design: called flow files the note itself": (
+        "design.md",
+        "  apply filing mark with design as design\n",
+        "  write design with design_docs\n", "P3"),
+    "assurance: table checked in the design note": (
+        "assurance.md",
+        "  generate assurance table from scope as table\n  write table with table_draft\n",
+        "  generate assurance table from scope as table\n  write table with design_docs\n", "P3"),
 }
 
 
@@ -102,7 +116,8 @@ class FlowFragmentTest(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
                 self.assertEqual(text.count(old), 1, f"{name}: mutation anchor not found once")
                 path.write_text(text.replace(old, new), encoding="utf-8")
-                code, out = check(path)
+                # All flows together: an exclusion rule in implement.md binds the flows it runs.
+                code, out = check(*(skill / "flows" / f for f in FLOWS))
                 self.assertNotEqual(code, 0, f"{name}: mutant passed\n{out}")
                 self.assertIn(f"error {rule}", out, f"{name}\n{out}")
 

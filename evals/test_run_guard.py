@@ -29,6 +29,14 @@ def skillwren_ledger_available():
         return False
 
 
+def skillwren_package_identity_available():
+    try:
+        from skillwren.ledger import package_identity  # noqa: F401  (SkillWren 0.10+)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 class RunGuardTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -620,6 +628,69 @@ class RunGuardTest(unittest.TestCase):
         self.assertEqual(steps, ["exec guard start", "verify design has a complete assurance table",
                                  "write implementation", "exec acceptance checks", "exec acceptance checks",
                                  "exec guard close"])
+
+    def close_a_clean_run(self):
+        self.design(["| A-1 | security | c | f | x (y) | t1 | unknown |\n",
+                     "| A-2 | verification | c | f | x (y) | t2 | unknown |\n"])
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "design.md")
+        self.assertEqual(self.hook(self.code_edit())[0], 0)
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        guard(self.repo, "checks", "--each", f"A-1 c :: {self.OK}", "--each", f"A-2 c :: {self.OK}")
+        return guard(self.repo, "close")
+
+    def loads(self):
+        path = self.repo / ".git" / "full-stack-runs" / "loaded.jsonl"
+        return [json.loads(l) for l in path.read_text(encoding="utf-8").splitlines()] if path.exists() else []
+
+    @unittest.skipUnless(skillwren_package_identity_available(), "SkillWren 0.10+ not importable")
+    def test_loading_the_skill_records_the_loaded_package(self):
+        # Field report 4, F-1: a cached hook with newer scripts. The hook runs from the copy the
+        # host loaded, so it records that copy's tree; close compares it with the run's scripts.
+        self.assertEqual(self.hook({"hook_event_name": "PreToolUse", "tool_name": "Skill", "session_id": "s",
+                                    "tool_input": {"skill": "full-stack:full-stack"}})[0], 0)
+        self.assertEqual(self.hook({"hook_event_name": "UserPromptSubmit", "session_id": "p",
+                                    "prompt": "/full-stack build it"})[0], 0)
+        records = self.loads()
+        self.assertEqual([(r["session"], r["source"]) for r in records], [("s", "skill"), ("p", "prompt")])
+        from skillwren.ledger import package_identity
+        self.assertEqual(records[0]["tree_sha256"], package_identity(GUARD.parents[1])["tree_sha256"])
+        self.assertFalse(records[0]["ambiguous"])
+        code, out = self.close_a_clean_run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("(same tree as this run's scripts)", out)
+
+    @unittest.skipUnless(skillwren_package_identity_available(), "SkillWren 0.10+ not importable")
+    def test_close_refuses_when_the_host_loaded_another_package(self):
+        path = self.repo / ".git" / "full-stack-runs"
+        path.mkdir(parents=True, exist_ok=True)
+        stale = {"time": "2000-01-01T00:00:00+00:00", "skill": "full-stack", "name": "full-stack",
+                 "session": "s", "path": "/cache/full-stack/0.8.0", "tree_sha256": "0" * 64,
+                 "candidates": [], "ambiguous": False}
+        (path / "loaded.jsonl").write_text(json.dumps(stale) + "\n", encoding="utf-8")
+        code, out = self.close_a_clean_run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("update the plugin", out)
+        self.assertIn("run left open", out)
+
+    def test_repository_can_require_the_skill_for_code_edits(self):
+        # SkillWren field response: 16/18 agents never loaded the skill. A repository that opts in
+        # turns a skipped skill into a blocked code edit; design notes stay free.
+        code_edit = {"hook_event_name": "PreToolUse", "tool_name": "Edit", "session_id": "s1",
+                     "tool_input": {"file_path": str(self.repo / "src" / "a.py")}}
+        doc_edit = {**code_edit, "tool_input": {"file_path": str(self.repo / "docs" / "x.md")}}
+        self.assertEqual(self.hook(code_edit)[0], 0)  # not opted in: unchanged
+        sh(self.repo, "git", "config", "fullstack.requireSkill", "true")
+        code, err = self.hook(code_edit)
+        self.assertEqual(code, 2)
+        self.assertIn("requires Full Stack", err)
+        self.assertEqual(self.hook(doc_edit)[0], 0)
+        self.assertEqual(self.hook({**code_edit, "session_id": None})[0], 2)  # no session: no load
+        guard(self.repo, "start", "--write-set", "src/", "--routine", "r")
+        self.assertEqual(self.hook(code_edit)[0], 2)  # an open run is not a load
+        self.hook({"hook_event_name": "PreToolUse", "tool_name": "Skill", "session_id": "s1",
+                   "tool_input": {"skill": "full-stack:full-stack"}})
+        self.assertEqual(self.hook(code_edit)[0], 0)
+        self.assertEqual(self.hook({**code_edit, "session_id": "s2"})[0], 2)  # per session
 
     def test_start_rejects_missing_assurance_file(self):
         code, out = guard(self.repo, "start", "--write-set", "src/", "--assurance", "nope.md")

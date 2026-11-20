@@ -1,6 +1,10 @@
 # Design flow
 
-Load for any request beyond an isolated routine edit. The fenced blocks are
+Load for any request beyond an isolated routine edit. A design-only request
+runs `deliver`, which designs and then files; `implement` runs `design`
+and files the note itself once its guarded run has started, because a
+design file written before `start` is an outside edit the guard will not
+adopt silently (field report 4, F-4). The fenced blocks are
 ordered instructions in SkillWren fragment form (checked with `skillwren
 check --fragment`), not a program; the sections below define each step.
 
@@ -94,10 +98,20 @@ design:
   if design should stay in chat:
     return design as design
 
-  write design with design_docs
-  if subject has a work tracker:
-    apply registry update with design as entry
-    write entry with registry
+  apply filing mark with design as design
+  return design as design
+```
+
+```logic
+deliver:
+  run design from flows/design.md with:
+    request = request
+
+  if design is marked for filing:
+    write design with design_docs
+    if subject has a work tracker:
+      apply registry update with design as entry
+      write entry with registry
 
   return design as design
 ```
@@ -139,6 +153,8 @@ design:
   mid-flow, so a dismissal never strands half-written work (SkillWren M1);
   the user authorizes it before building.
 - **registry update**: update this work's entry, else add one.
+- **filing mark**: the design reached the end of `design` without an early
+  return (not dismissed, not left in chat), so its caller files it.
 
 `if`/`when` run their block when the condition holds. `require` stops
 unless `otherwise:` repairs; `verify` checks evidence, `otherwise:` repairs,

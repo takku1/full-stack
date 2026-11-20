@@ -55,6 +55,11 @@ STEP_WRITE = "write implementation"
 STEP_CHECKS = "exec acceptance checks"
 STEP_CLOSE = "exec guard close"
 MILESTONES = [STEP_START, STEP_TABLE, STEP_WRITE, STEP_CHECKS, STEP_CLOSE]
+# SkillWren host-load records (its hostload.py format), beside the ledger directory, so the
+# ledger check at close compares the package the run's scripts came from with the copy the
+# host loaded (field report 4, F-1: a cached 0.8.0 hook with 0.8.2 scripts).
+LOADS = "loaded.jsonl"
+PACKAGE = SCRIPTS.parent
 
 try:  # optional: SkillWren 0.7's run ledger (hash-chained steps checked against a flow's order rules)
     from skillwren import ledger as sw_ledger
@@ -354,8 +359,13 @@ def ledger_open(root, record):
     if sw_ledger is None or record.get("ledger") or not has_table(record):
         return
     try:
-        _run, path, _rules = sw_ledger.start(IMPLEMENT_FLOW, runs_dir(root) / "ledger",
-                                             label=record["id"], required=MILESTONES)
+        try:  # SkillWren 0.10+: bind the run to this package's tree
+            _run, path, _rules = sw_ledger.start(IMPLEMENT_FLOW, runs_dir(root) / "ledger",
+                                                 label=record["id"], required=MILESTONES,
+                                                 package=PACKAGE)
+        except TypeError:  # SkillWren 0.9: no package binding
+            _run, path, _rules = sw_ledger.start(IMPLEMENT_FLOW, runs_dir(root) / "ledger",
+                                                 label=record["id"], required=MILESTONES)
         record["ledger"] = str(path)
     except Exception as exc:  # noqa: BLE001
         record["ledger_error"] = str(exc)
@@ -664,6 +674,12 @@ def cmd_close(args):
               + (f"; missing {', '.join(report['missing_milestones'])}" if report["missing_milestones"] else "")
               + (f"; {'; '.join(broken)}" if broken else "")
               + (f"; chain: {'; '.join(report['integrity'])}" if report["integrity"] else ""))
+        package = report.get("package")
+        if package:
+            print(f"Package: the host loaded {package['loaded_path']} "
+                  + ("(same tree as this run's scripts)" if package["match"] else
+                     f"(tree {str(package['loaded'])[:12]}), but this run's scripts are tree "
+                     f"{str(package['recorded'])[:12]}: update the plugin or run the loaded copy's scripts"))
         if not report["ok"]:
             problems = 1
         record["ledger_checked"] = True
@@ -813,6 +829,36 @@ def session_marker(root, session_id):
     return folder / safe
 
 
+def record_load(root, session, source):
+    """Append a SkillWren host-load record for this session.
+
+    The hook runs from the copy the host loaded (the plugin root), so the record names that
+    copy and its tree digest directly rather than guessing the host's resolution order.
+    Needs SkillWren 0.10+ (package_identity); without it nothing is recorded."""
+    identity = getattr(sw_ledger, "package_identity", None)
+    if identity is None or not session:
+        return None
+    try:
+        tree = identity(PACKAGE)["tree_sha256"]
+    except Exception:  # noqa: BLE001  (an unreadable package is not a load)
+        return None
+    entry = {"time": time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime()),
+             "skill": "full-stack", "name": "full-stack", "session": str(session),
+             "source": source, "path": str(PACKAGE), "tree_sha256": tree,
+             "candidates": [{"path": str(PACKAGE), "tree_sha256": tree}], "ambiguous": False}
+    with (runs_dir(root) / LOADS).open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(entry, sort_keys=True) + "\n")
+    return entry
+
+
+def requires_skill(root):
+    """A repository opts in with `git config fullstack.requireSkill true`: code edits then need
+    a session that loaded Full Stack, so a skipped skill is a blocked edit, not a silent gap."""
+    probe = subprocess.run(["git", "config", "--get", "--bool", "fullstack.requireSkill"],
+                           cwd=root, capture_output=True, text=True)
+    return probe.stdout.strip() == "true"
+
+
 def is_code(rel):
     """Edits that change the subject; design notes (Markdown, docs/) stay free before a run."""
     p = rel.lower()
@@ -838,10 +884,12 @@ def cmd_hook(args):
     if name == "UserPromptSubmit":
         if session and SKILL_PROMPT.search(str(event.get("prompt", ""))):
             session_marker(root, session).write_text("prompt", encoding="utf-8")
+            record_load(root, session, "prompt")
         return 0
     if name == "PreToolUse" and event.get("tool_name") == "Skill":
         if session and "full-stack" in json.dumps(event.get("tool_input") or {}):
             session_marker(root, session).write_text("skill", encoding="utf-8")
+            record_load(root, session, "skill")
         return 0
     if name == "PreToolUse":
         target = (event.get("tool_input") or {}).get("file_path") or (event.get("tool_input") or {}).get("notebook_path")
@@ -854,6 +902,13 @@ def cmd_hook(args):
             rel = target.resolve().relative_to(root.resolve()).as_posix()
         except ValueError:
             return 0
+        if is_code(rel) and not (session and session_marker(root, session).exists()) \
+                and requires_skill(root):
+            print("run_guard: this repository requires Full Stack for code changes "
+                  "(git config fullstack.requireSkill true), and this session has not loaded it. "
+                  "Invoke /full-stack:full-stack (or the full-stack skill) first; design notes stay free.",
+                  file=sys.stderr)
+            return 2
         if record is None:
             if args.require_run:
                 print("run_guard: no guarded run is open. Start one before editing: "

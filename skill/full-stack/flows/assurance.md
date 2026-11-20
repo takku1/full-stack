@@ -21,20 +21,23 @@ assurance:
   read raised discipline modules from assurance as modules
   apply module guidance with modules as scope
   generate assurance table from scope as table
-  write table with design_docs
+  write table with table_draft
   exec assurance table check from scripts as table_check
   verify #table the table has no gaps from table_check
     otherwise:
       apply table repair with table as table
-      write table with design_docs
+      write table with table_draft
       exec assurance table check from scripts as table_check
       retry
   return #assurance table as assurance
 ```
 
 `exec assurance screen` is `scripts/assurance.py screen` (section 1);
-`exec assurance table check` is `scripts/assurance.py check <design file>`
-(section 4). **Raised disciplines**: the Screen line's tiers, with the
+`exec assurance table check` is `scripts/assurance.py check <table draft>`
+(section 4). **table_draft**: a scratch Markdown file outside the subject
+repository (the OS temp directory) holding the assurance section, so the
+table is checked before any design file is written; the caller files it
+(design `deliver`, or `implement` after the guarded run starts). **Raised disciplines**: the Screen line's tiers, with the
 answers that raised each. **Module guidance**: each loaded module's Policy,
 How to, and Checks at the raised tier. **Table repair**: add the missing rows or checks the check
 named, or move a claim with no possible check to blockers; never drop a
@@ -103,8 +106,9 @@ costly-commitment rule.
 ## 4. Hand off
 
 The table goes in the design's **assurance** section; `scripts/assurance.py
-check DESIGN.md` reports raised disciplines with no row and rows with no
-check. When building, declare the table with `run_guard.py start ...
+check FILE` (the draft here, the design note once filed) reports raised disciplines with no row and rows with no
+check. When building, start the run with the design note in the write set,
+write the note, then declare the table with `run_guard.py declare
 --assurance DESIGN.md` and make every row's check an acceptance
 criterion that names its ID: `run_guard.py checks --each "A-1 <claim> ::
 <command>"`. `close` refuses while the table has gaps or a row's latest
