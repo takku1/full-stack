@@ -109,7 +109,8 @@ The table goes in the design's **assurance** section; `scripts/assurance.py
 check FILE` (the draft here, the design note once filed) reports raised disciplines with no row and rows with no
 check. When building, start the run with the design note in the write set,
 write the note, then declare the table with `run_guard.py declare
---assurance DESIGN.md` and make every row's check an acceptance
+--assurance DESIGN.md` (`--section "<heading>"` when the note holds
+earlier deliveries' tables too) and make every row's check an acceptance
 criterion that names its ID: `run_guard.py checks --each "A-1 <claim> ::
 <command>"`. `close` refuses while the table has gaps or a row's latest
 check is missing or failing; documented evidence exempts only tier 1 rows.

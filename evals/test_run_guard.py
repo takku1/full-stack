@@ -577,6 +577,70 @@ class RunGuardTest(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertEqual(guard(self.repo, "start", "--write-set", "src/a.py", "--routine", "r")[0], 3)
 
+    # Field report 5 (MochiOS, 2026-11-20).
+
+    def test_widen_claims_a_path_found_mid_run(self):
+        # R-1: the fix needed a library crate the design had not named; with no way to widen,
+        # the run was finished with blockers and restarted, adopting its own note edit.
+        guard(self.repo, "start", "--write-set", "src/a.py", "--routine", "r")
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        edit_b = {"hook_event_name": "PreToolUse", "tool_name": "Edit",
+                  "tool_input": {"file_path": str(self.repo / "src" / "b.py")}}
+        self.assertEqual(self.hook(edit_b)[0], 2)
+        code, out = guard(self.repo, "widen", "--write-set", "src/b.py")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.hook(edit_b)[0], 0)
+        (self.repo / "src" / "b.py").write_text("b = 2\n")
+        guard(self.repo, "exec", "--criterion", "c", "--", sys.executable, "-c", "pass")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)
+
+    def test_widen_keeps_starts_collision_rules(self):
+        (self.repo / "src" / "b.py").write_text("b = 9\n")  # someone else's uncommitted edit
+        guard(self.repo, "start", "--write-set", "src/a.py", "--label", "WP-1", "--routine", "r")
+        code, out = guard(self.repo, "widen", "--write-set", "src/b.py")
+        self.assertEqual(code, 3, out)
+        self.assertIn("uncommitted edit made before this run: src/b.py", out)
+        self.assertEqual(guard(self.repo, "widen", "--write-set", "src/b.py", "--adopt", "src/b.py")[0], 0)
+        record = json.loads(next((self.repo / ".git" / "full-stack-runs").glob("*.json")).read_text(encoding="utf-8"))
+        self.assertEqual(record["widened"][0]["adopted"], ["src/b.py"])
+        self.assertNotIn("src/b.py", record["dirty_at_start"])
+
+    def test_widen_refuses_another_open_runs_claim(self):
+        guard(self.repo, "start", "--write-set", "src/b.py", "--label", "WP-2", "--routine", "r")
+        guard(self.repo, "start", "--write-set", "src/a.py", "--label", "WP-1", "--routine", "r")
+        code, out = guard(self.repo, "widen", "--write-set", "src/")
+        self.assertEqual(code, 3, out)
+        self.assertIn("open run with overlapping write set", out)
+
+    def test_section_scopes_the_assurance_table(self):
+        # R-2: a concept note keeps one dated section per delivery; declaring the note made
+        # the guard demand fresh checks for every earlier section's rows.
+        (self.repo / "note.md").write_text(
+            "# Concept\n\n## Earlier delivery\n\n"
+            "Screen: security T1 (boundary); verification T1 (build); others T0\n\n"
+            "| ID | Discipline | Claim | Could fail by | Control (owner) | Check | Evidence |\n|---|---|---|---|---|---|---|\n"
+            "| A-1 | security | old | f | x (y) | t1 | tested |\n| A-2 | verification | old | f | x (y) | t2 | tested |\n\n"
+            "## This delivery (2026-11-20)\n\n"
+            "Screen: verification T1 (build); others T0\n\n"
+            "| ID | Discipline | Claim | Could fail by | Control (owner) | Check | Evidence |\n|---|---|---|---|---|---|---|\n"
+            "| A-1 | verification | new | f | x (y) | t3 | unknown |\n\n## Checklist\n\nnone\n")
+        assurance = [sys.executable, str(GUARD.parent / "assurance.py"), "check", str(self.repo / "note.md")]
+        whole = subprocess.run(assurance, capture_output=True, text=True)
+        self.assertIn("A-1: duplicate ID", whole.stdout)
+        part = subprocess.run(assurance + ["--section", "This delivery"], capture_output=True, text=True)
+        self.assertEqual(part.returncode, 0, part.stdout)
+        self.assertIn("1 rows, 0 gaps", part.stdout)
+        missing = subprocess.run(assurance + ["--section", "Nope"], capture_output=True, text=True)
+        self.assertEqual(missing.returncode, 2)
+        guard(self.repo, "start", "--write-set", "src/", "--assurance", "note.md", "--section", "This delivery")
+        self.assertEqual(self.hook(self.code_edit())[0], 0)  # the section's table passes
+        (self.repo / "src" / "a.py").write_text("a = 2\n")
+        guard(self.repo, "checks", "--each", f"A-1 new :: {self.OK}")
+        code, out = guard(self.repo, "close")
+        self.assertEqual(code, 0, out)  # A-2 of the earlier section is not demanded
+        self.assertIn('section "This delivery"', out)
+
     def test_report_marks_criteria_seen_failing_first(self):
         # Red then green is evidence that a check can detect its failure (FS-016 check meaningfulness).
         guard(self.repo, "start", "--write-set", "src/", "--routine", "r")

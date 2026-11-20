@@ -43,7 +43,7 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from assurance import DEFAULT_RULES, check_table, load_rules  # noqa: E402  (sibling script, stdlib only)
+from assurance import DEFAULT_RULES, check_table, load_rules, section_text  # noqa: E402  (sibling script, stdlib only)
 
 STALE_HOURS = 24
 SCRIPTS = Path(__file__).resolve().parent
@@ -252,9 +252,12 @@ def assurance_declaration(root, args):
         if not path.exists():
             raise SystemExit(f"run_guard: assurance file not found: {args.assurance}")
         try:
-            return {"file": path.resolve().relative_to(root.resolve()).as_posix()}
+            declared = {"file": path.resolve().relative_to(root.resolve()).as_posix()}
         except ValueError:
-            return {"file": str(path.resolve())}
+            declared = {"file": str(path.resolve())}
+        if getattr(args, "section", None):
+            declared["section"] = args.section
+        return declared
     return None
 
 
@@ -308,6 +311,10 @@ def read_table(root, declared):
         text = path.read_text(encoding="utf-8-sig")
     except OSError:
         return f"assurance file unreadable: {declared['file']}"
+    if declared.get("section"):
+        text = section_text(text, declared["section"])
+        if text is None:
+            return f"no heading starting with {declared['section']!r} in {declared['file']}"
     disciplines = set(load_rules(DEFAULT_RULES)["disciplines"])
     tiers, rows, errors, _pending = check_table(text, disciplines)
     if not rows:
@@ -389,6 +396,8 @@ def table_gate(root, record):
     path = Path(record["assurance"]["file"])
     path = path if path.is_absolute() else root / path
     argv = [sys.executable, str(SCRIPTS / "assurance.py"), "check", str(path)]
+    if record["assurance"].get("section"):
+        argv += ["--section", record["assurance"]["section"]]
     if sw_ledger is not None and record.get("ledger"):
         code, _out, _err = sw_ledger.exec_step(Path(record["ledger"]), STEP_TABLE, argv)
         if code:
@@ -408,7 +417,8 @@ def describe_assurance(record):
         return text
     if not declared:
         return "not declared"
-    return f"table in `{declared['file']}`"
+    section = f" (section \"{declared['section']}\")" if declared.get("section") else ""
+    return f"table in `{declared['file']}`{section}"
 
 
 def cmd_declare(args):
@@ -459,17 +469,8 @@ def cmd_start(args):
     adopted = {p.replace("\\", "/") for p in args.adopt}
     outside_edits = [p for p in dirty if in_write_set(p, write_set) and p not in adopted
                      and not in_write_set(p, shared)]
-    others = []
     now = time.time()
-    for other in runs.glob("*.json"):
-        record = json.loads(other.read_text(encoding="utf-8"))
-        if record.get("finished") or now - record["started"] > STALE_HOURS * 3600:
-            continue
-        theirs_shared = record.get("shared", [])
-        mine_exclusive = [p for p in write_set if p not in shared]
-        theirs_exclusive = [p for p in record["write_set"] if p not in theirs_shared]
-        if sets_overlap(mine_exclusive, record["write_set"]) or sets_overlap(write_set, theirs_exclusive):
-            others.append(f"{record['id']} ({record.get('label') or 'unlabeled'}): {', '.join(record['write_set'])}")
+    others = overlapping_runs(runs, write_set, shared)
     if outside_edits or others:
         for p in outside_edits:
             print(f"collision: uncommitted edit made outside this run: {p}")
@@ -516,6 +517,68 @@ def cmd_start(args):
         print("note: no assurance declared. Beyond a routine edit, screen first (flows/assurance.md), then "
               "run_guard.py declare --assurance DESIGN.md; for a routine edit, declare --routine. "
               "close refuses until one is declared.")
+    return 0
+
+
+def overlapping_runs(runs, write_set, shared, exclude=None):
+    """Open runs whose write sets collide with this claim (exclusive against anything)."""
+    found, now = [], time.time()
+    for other in runs.glob("*.json"):
+        record = json.loads(other.read_text(encoding="utf-8"))
+        if record.get("finished") or now - record["started"] > STALE_HOURS * 3600 or record["id"] == exclude:
+            continue
+        theirs_shared = record.get("shared", [])
+        mine_exclusive = [p for p in write_set if p not in shared]
+        theirs_exclusive = [p for p in record["write_set"] if p not in theirs_shared]
+        if sets_overlap(mine_exclusive, record["write_set"]) or sets_overlap(write_set, theirs_exclusive):
+            found.append(f"{record['id']} ({record.get('label') or 'unlabeled'}): {', '.join(record['write_set'])}")
+    return found
+
+
+def cmd_widen(args):
+    """Claim more paths for the open run when the work turns out to need them (field report 5,
+    R-1). Same rules as start: a path another open run claims collides, and an uncommitted edit
+    that predates the run needs --adopt. Edits this run made are already its own."""
+    root = repo_root()
+    runs = runs_dir(root)
+    path, record = load(runs, args.run)
+    if record.get("finished"):
+        print(f"run_guard: run {record['id']} is finished; start a new run.", file=sys.stderr)
+        return 2
+    shared = [p.replace("\\", "/") for p in args.shared]
+    new = [p.replace("\\", "/") for p in args.write_set] + shared
+    if not new:
+        print("run_guard: name the paths to add (--write-set or --shared PATTERN ...).", file=sys.stderr)
+        return 2
+    adopted = {p.replace("\\", "/") for p in args.adopt}
+    before_run = [p for p in record["dirty_at_start"] if in_write_set(p, new)
+                  and not in_write_set(p, record["write_set"]) and p not in adopted
+                  and not in_write_set(p, shared)]
+    others = overlapping_runs(runs, new, shared, exclude=record["id"])
+    if before_run or others:
+        for p in before_run:
+            print(f"collision: uncommitted edit made before this run: {p}")
+        for o in others:
+            print(f"collision: open run with overlapping write set: {o}")
+        print("Nothing was added.")
+        if before_run:
+            print("If the user confirms these edits belong to this work, rerun with: --adopt "
+                  + " ".join(shlex.quote(p) for p in before_run))
+        return 3
+    snapshots = record.setdefault("shared_snapshots", {})
+    for rel in record["dirty_at_start"]:
+        if in_write_set(rel, shared) and rel not in adopted and rel not in snapshots:
+            current = file_lines(root / rel)
+            snapshots[rel] = {"lines": current,
+                              "protected": sorted(protected_lines(committed_lines(root, rel), current))}
+    for rel in adopted:
+        record["dirty_at_start"].pop(rel, None)
+    record["write_set"] = record["write_set"] + [p for p in new if p not in record["write_set"]]
+    record["shared"] = record.get("shared", []) + [p for p in shared if p not in record.get("shared", [])]
+    record["adopted"] = sorted(set(record.get("adopted", [])) | adopted)
+    record.setdefault("widened", []).append({"time": time.time(), "paths": new, "adopted": sorted(adopted)})
+    save(path, record)
+    print(f"run {record['id']} write set: {', '.join(record['write_set'])}")
     return 0
 
 
@@ -964,6 +1027,8 @@ def add_assurance_flags(p):
                        help="file with the assurance table; each row ID must appear in an executed check's criterion")
     group.add_argument("--routine", metavar="REASON",
                        help="a routine edit with no assurance table; the reason is shown in the report")
+    p.add_argument("--section", metavar="HEADING",
+                   help="with --assurance: only the table under the first heading starting with HEADING")
 
 
 def main(argv=None):
@@ -978,6 +1043,12 @@ def main(argv=None):
     p.add_argument("--adopt", nargs="+", action="extend", default=[], metavar="PATH",
                    help="uncommitted paths the user confirmed belong to this work")
     add_assurance_flags(p)
+    p = sub.add_parser("widen", help="claim more paths for the open run")
+    p.add_argument("--run")
+    p.add_argument("--write-set", nargs="+", action="extend", default=[], metavar="PATTERN")
+    p.add_argument("--shared", nargs="+", action="extend", default=[], metavar="PATTERN")
+    p.add_argument("--adopt", nargs="+", action="extend", default=[], metavar="PATH",
+                   help="uncommitted paths from before the run the user confirmed belong to this work")
     p = sub.add_parser("declare", help="set the run's assurance declaration")
     p.add_argument("--run")
     p.add_argument("--override", action="store_true",
@@ -1017,7 +1088,7 @@ def main(argv=None):
     p.add_argument("--require-run", action="store_true",
                    help="block edits in a git repository when no guarded run is open")
     args = parser.parse_args(argv)
-    return {"start": cmd_start, "declare": cmd_declare, "exec": cmd_exec, "checks": cmd_checks, "check": cmd_check,
+    return {"start": cmd_start, "widen": cmd_widen, "declare": cmd_declare, "exec": cmd_exec, "checks": cmd_checks, "check": cmd_check,
             "report": cmd_report, "finish": cmd_finish, "close": cmd_close, "hook": cmd_hook}[args.cmd](args)
 
 

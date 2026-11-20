@@ -118,6 +118,10 @@ A guarded run takes three calls:
    When this run writes the design note, start first with the note in the
    write set, write the table, then `declare --assurance <note>`: a note
    written before `start` is an uncommitted edit only the user can adopt.
+   When the note keeps one dated section per delivery, add `--section
+   "<heading>"` so only this delivery's table counts. If the work needs a
+   path the write set missed, `run_guard.py widen --write-set <path>` claims
+   it under the same collision rules; do not finish and restart.
    Exit 3 is a collision. `--shared` claims files other workers also edit.
 2. **check plan + write checks**: all acceptance checks, including every
    check in the design's assurance table, in one call,

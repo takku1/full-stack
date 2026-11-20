@@ -150,6 +150,29 @@ def cmd_screen(args):
     return 0
 
 
+HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+
+
+def section_text(text, section):
+    """The Markdown under the first heading whose text starts with `section` (case-insensitive),
+    up to the next heading of the same or a higher level; None when no heading matches. A
+    concept note with dated sections then checks one section's table, not every earlier one
+    (field report 5, R-2)."""
+    lines = text.splitlines()
+    start = level = None
+    wanted = section.strip().lower()
+    for i, line in enumerate(lines):
+        m = HEADING.match(line)
+        if not m:
+            continue
+        if start is None:
+            if m.group(2).strip().lower().startswith(wanted):
+                start, level = i, len(m.group(1))
+        elif len(m.group(1)) <= level:
+            return "\n".join(lines[start:i])
+    return None if start is None else "\n".join(lines[start:])
+
+
 def parse_table(text):
     """Screen tiers and assurance rows (id, discipline, check, evidence) from Markdown."""
     tiers = {}
@@ -204,6 +227,11 @@ def cmd_check(args):
     except OSError as exc:
         print(f"assurance: cannot read {args.file}: {exc}", file=sys.stderr)
         return 2
+    if args.section:
+        text = section_text(text, args.section)
+        if text is None:
+            print(f"assurance: no heading starting with {args.section!r} in {args.file}", file=sys.stderr)
+            return 2
     _tiers, rows, errors, pending = check_table(text, set(rules["disciplines"]))
     if args.json:
         print(json.dumps({"rows": rows, "errors": errors, "pending": pending}, indent=2))
@@ -236,6 +264,8 @@ def main(argv=None):
     p.add_argument("--json", action="store_true")
     p = sub.add_parser("check", help="check an assurance table for structural gaps")
     p.add_argument("file")
+    p.add_argument("--section", metavar="HEADING",
+                   help="check only the table under the first heading starting with HEADING")
     p.add_argument("--rules", default=DEFAULT_RULES)
     p.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)

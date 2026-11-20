@@ -239,4 +239,6 @@ Status: done 2026-11-20 at the owner's request (SkillWren's three-tier pipeline 
 - **Opt-in load requirement.** `git config fullstack.requireSkill true` makes the hook block code edits in any session that has not loaded Full Stack (design notes stay free), answering SkillWren's finding that 16/18 agents never loaded the skill. Advisory like the rest of this guard: the agent can unset the config. SkillWren 0.11's guard-side load requirement (SPEC 24) is for a trusted host, which this package is not.
 - **Not adopted.** The stack fragment's entry step as a required ledger milestone: in an existing repository every layer starts as "keep current", so skipping the stack flow is usually correct, and requiring it would make legitimate runs `incomplete`. W16 does not apply (`SKILL.md` has no logic block and names flows only in a routing table).
 
+- **From the MochiOS build ([field report 5](research/field-report-2026-11-20-mochios-5.md)).** `run_guard.py widen` claims a path found mid-run under start's collision rules (R-1), and `--section HEADING` scopes the assurance table to one dated section of a concept note (R-2).
+
 Revisit the milestone if a pressure case shows a skipped stack flow that should have run (FS-015 P1).

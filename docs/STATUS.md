@@ -12,6 +12,8 @@ Feature freeze: evidence before features. FS-023 is done on Windows ([results](.
 
 FS-029 full run ([results](../evals/results/pressure-2026-11-19.md), 18 sessions, $4.23, 0.8.1): skill vs control `continue-small` 3/3 vs 0/3, `trivial-framing` 2/3 vs 0/3, `constrained-stack` 0/3 vs 0/3. The SkillWren ledger never blocked a legitimate run. Hidden outcomes passed in both arms. Under a "standard library only" prompt, no skill session ran the stack check (FS-015 P1, 3/3), and two sessions chose different stores; a mechanism for that needs an owner decision. Three auditor defects (P-5 to P-7) and one package defect (P-8) were fixed with failing tests first.
 
+[Field report 5](research/field-report-2026-11-20-mochios-5.md) (2026-11-20): 0.9.0 built a MochiOS fix end to end (reliable WAIT_BLOCK boot markers; ledger `valid, complete`; loaded package matched). Exclusion rules caught the F-4 order on paper; the build added `widen` (R-1) and `--section` (R-2).
+
 [Field report 4](research/field-report-2026-11-19-mochios-4.md) (2026-11-19): 0.8.2 built a MochiOS kernel slice end to end under the guard (push wake for WAIT_BLOCK; native boot evidence; ledger `valid, complete`). Neither order for writing the design note worked (F-4, F-6), and test-first reproductions failed close (F-7, seen in the last four MochiOS runs); all fixed in 0.8.3 with failing tests first. The installed plugin was a stale 0.8.0 (F-1).
 
 - FS-015: first greenfield trial of 0.5.0 end to end: stack brief → candidate sets → `check_stack.py profiles` → decision records → `check_stack.py check` → assurance screen and table → checks through `run_guard.py`.
