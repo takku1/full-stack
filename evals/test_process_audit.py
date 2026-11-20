@@ -71,6 +71,51 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(result["code_edits"], 1)
         self.assertEqual(result["refused_calls"], 2)
 
+    def test_sandbox_refusals_did_not_happen(self):
+        # Pressure run 2026-11-19, trivial-framing skill #1 (P-5): the harness refused an inline
+        # check script ("may execute arbitrary code"), yet it was counted as assurance checks.
+        def call(i, command):
+            return {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "id": i, "name": "Bash", "input": {"command": command}}]}}
+        def result(i, text, error=True):
+            return {"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": i, "is_error": error, "content": text}]}}
+        checks = 'py -3 run_guard.py checks --each "A-1 other user gets 404 :: py -3 t.py"'
+        session = [SCREEN, TABLE, START, CODE,
+                   call("c1", checks), result("c1", "Command contains script block that may execute arbitrary code"),
+                   call("c2", checks), result("c2", "A group in parentheses in this command can't be checked before it runs"),
+                   call("c3", checks), result("c3", "cd in 'Z:\\x' was blocked. For security, Claude Code may only ...")]
+        audited = audit(session)
+        self.assertFalse(audited["checks_name_assurance_ids"])
+        self.assertEqual(audited["refused_calls"], 3)
+        # A check that ran and failed did happen: its exit code is the evidence.
+        ran = audit(session + [call("c4", checks), result("c4", "Exit code 1 | A-1 FAIL")])
+        self.assertTrue(ran["checks_name_assurance_ids"])
+        self.assertEqual(ran["refused_calls"], 3)
+
+    def test_refused_close_is_not_closed(self):
+        # Same session (P-6): `close` exited 3, then `close --accept-blockers` exited 1, and the run
+        # stayed open; the audit reported closed.
+        def close(i, text, error):
+            return [{"type": "assistant", "message": {"content": [
+                        {"type": "tool_use", "id": i, "name": "Bash", "input": {"command": "py -3 run_guard.py close"}}]}},
+                    {"type": "user", "message": {"content": [
+                        {"type": "tool_result", "tool_use_id": i, "is_error": error, "content": text}]}}]
+        failed = [SCREEN, TABLE, START, CODE, CHECKS] + close("x1", "Exit code 3 | collision", True) \
+            + close("x2", "Exit code 1 | none executed", True)
+        self.assertFalse(audit(failed)["closed"])
+        self.assertTrue(audit(failed + close("x3", "### Run ... closed", False))["closed"])
+
+    def test_every_guard_step_in_a_compound_command_counts(self):
+        # Pressure run 2026-11-19, trivial-framing skill #2 (P-7): "declare ...; checks ...; close"
+        # recorded only the declare, so the run's one clean close was missed.
+        compound = tool("Bash", command='py -3 run_guard.py declare --assurance d.md --override; '
+                                        'py -3 run_guard.py checks --each "A-1 x :: py -3 t.py"; py -3 run_guard.py close')
+        result = audit([SCREEN, TABLE, START, CODE, compound])
+        self.assertTrue(result["closed"])
+        self.assertTrue(result["checks_name_assurance_ids"])
+        self.assertTrue(result["declared_table"])
+
     def test_shell_write_is_counted(self):
         result = audit([tool("Bash", command="echo x > app.py")])
         self.assertEqual(result["shell_writes"], 1)

@@ -135,6 +135,16 @@ class CheckTest(unittest.TestCase):
         self.assertIn("discipline ux is not raised", out)
         self.assertIn("verification is raised to T1 but has no row", out)
 
+    def test_row_ids_the_guard_cannot_match_are_gaps(self):
+        # Pressure run 2026-11-19, trivial-framing skill #2 (P-8): rows V-1 and O-1 passed this
+        # check, but the guard matches only A-<n> in check criteria, so close refused the run.
+        code, out = self.check(self.HEADER
+                               + "| A-1 | security | no double charge | retry | key (data) | test_replay | tested |\n"
+                               + "| V-1 | verification | paths run | skip | probe (tests) | test_paths | tested |\n")
+        self.assertEqual(code, 1, out)
+        self.assertIn("V-1: row IDs must be A-<n>", out)
+        self.assertNotIn("A-1: row IDs", out)
+
     def test_missing_screen_line_is_a_gap(self):
         code, out = self.check("| A-1 | security | c | f | x (y) | t | tested |\n")
         self.assertEqual(code, 1)

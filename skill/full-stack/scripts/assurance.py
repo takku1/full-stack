@@ -180,6 +180,8 @@ def check_table(text, disciplines):
         if r["id"] in seen:
             errors.append(f"{r['id']}: duplicate ID")
         seen.add(r["id"])
+        if not re.fullmatch(r"A-\d+", r["id"]):
+            errors.append(f"{r['id']}: row IDs must be A-<n> so the run guard can match each row's check")
         if r["discipline"] not in disciplines:
             errors.append(f"{r['id']}: unknown discipline {r['discipline']!r}")
         elif tiers and not tiers.get(r["discipline"]):
